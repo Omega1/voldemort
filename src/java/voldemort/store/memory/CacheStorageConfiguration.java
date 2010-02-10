@@ -16,44 +16,51 @@
 
 package voldemort.store.memory;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentMap;
-
 import voldemort.server.VoldemortConfig;
 import voldemort.store.StorageConfiguration;
 import voldemort.store.StorageEngine;
 import voldemort.utils.ByteArray;
 import voldemort.versioning.Versioned;
 
-import com.google.common.collect.MapMaker;
+import java.util.List;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * Identical to the InMemoryStorageConfiguration except that it creates google
- * collections ReferenceMap with Soft references on both keys and values. This
- * behaves like a cache, discarding values when under memory pressure.
- * 
- * @author jay
- * 
+ * Identical to the InMemoryStorageConfiguration except that it creates a heap aware backing map which evicts
+ * entries once the used heap exceeds a certain percentage of the maximum heap (75% by default)
+ *<p />
+ * The use of this store may require tuning JVM arguments for best effectiveness. An example of arguments that have
+ * been shown to help on a Sun 1.6 JVM include "-XX:+UseConcMarkSweepGC -XX:+UseParNewGC
+ * -XX:CMSInitiatingOccupancyFraction=68 -XX:+CMSParallelRemarkEnabled -XX:+CMSScavengeBeforeRemark
+ * -XX:CMSMaxAbortablePrecleanTime=1000"
  */
 public class CacheStorageConfiguration implements StorageConfiguration {
 
     public static final String TYPE_NAME = "cache";
 
-    public CacheStorageConfiguration() {}
+    // default is start eviction when the heap exceeds 75%
+    public static final int DEFAULT_EVICTING_HEAP_PERCENTAGE = 75;
+
+    private final int evictionPercentage;
+
+    public CacheStorageConfiguration() {
+        evictionPercentage = DEFAULT_EVICTING_HEAP_PERCENTAGE;
+    }
 
     @SuppressWarnings("unused")
-    public CacheStorageConfiguration(VoldemortConfig config) {}
+    public CacheStorageConfiguration(VoldemortConfig config) {
+        evictionPercentage = config.getCacheHeapEvictingPercentage();
+    }
 
     public void close() {}
 
     public StorageEngine<ByteArray, byte[]> getStore(String name) {
-        ConcurrentMap<ByteArray, List<Versioned<byte[]>>> backingMap = new MapMaker().softValues()
-                                                                                     .makeMap();
+        ConcurrentMap<ByteArray, List<Versioned<byte[]>>> backingMap = ConcurrentLinkedHashMap.create(name,
+                ConcurrentLinkedHashMap.EvictionPolicy.SECOND_CHANCE, evictionPercentage);
         return new InMemoryStorageEngine<ByteArray, byte[]>(name, backingMap);
     }
 
     public String getType() {
         return TYPE_NAME;
     }
-
 }
