@@ -31,15 +31,15 @@ import java.util.concurrent.ConcurrentMap;
  *<p />
  * The use of this store may require tuning JVM arguments for best effectiveness. An example of arguments that have
  * been shown to help on a Sun 1.6 JVM include "-XX:+UseConcMarkSweepGC -XX:+UseParNewGC
- * -XX:CMSInitiatingOccupancyFraction=68 -XX:+CMSParallelRemarkEnabled -XX:+CMSScavengeBeforeRemark
+ * -XX:CMSInitiatingOccupancyFraction=78 -XX:+CMSParallelRemarkEnabled -XX:+CMSScavengeBeforeRemark
  * -XX:CMSMaxAbortablePrecleanTime=1000"
  */
 public class CacheStorageConfiguration implements StorageConfiguration {
 
     public static final String TYPE_NAME = "cache";
 
-    // default is start eviction when the heap exceeds 75%
-    public static final int DEFAULT_EVICTING_HEAP_PERCENTAGE = 75;
+    // default is start eviction when the heap exceeds 80%
+    public static final int DEFAULT_EVICTING_HEAP_PERCENTAGE = 80;
 
     private final int evictionPercentage;
 
