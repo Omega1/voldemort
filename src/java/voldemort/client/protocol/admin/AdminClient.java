@@ -21,11 +21,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -1102,6 +1098,33 @@ public class AdminClient {
             if(response.hasError())
                 throwException(response.getError());
         }
+    }
+
+    /**
+     * Returns a set of all keys for a store from a remote node
+     *
+     * @param nodeId Id of the remote node
+     * @return a set of all keys for a store from a remote node
+     */
+    public Set<ByteArray> getAllKeys(int nodeId, String storeName) {
+        VAdminProto.AllKeysRequest.Builder allKeysRequest = VAdminProto.AllKeysRequest.newBuilder().setStore(storeName);
+
+        VAdminProto.VoldemortAdminRequest request = VAdminProto.VoldemortAdminRequest.newBuilder()
+                                                                                         .setType(VAdminProto.AdminRequestType.ALL_KEYS)
+                                                                                         .setAllKeys(allKeysRequest)
+                                                                                         .build();
+        Set<ByteArray> keys = new HashSet<ByteArray>();
+        VAdminProto.AllKeysResponse.Builder response = sendAndReceive(nodeId,
+                                                                       request,
+                                                                       VAdminProto.AllKeysResponse.newBuilder());
+        if(response.hasError())
+            throwException(response.getError());
+
+        for (int i = 0; i< response.getKeyCount(); i++) {
+            keys.add(ProtoUtils.decodeBytes(response.getKey(i)));
+        }
+
+        return keys;
     }
 
     /**
