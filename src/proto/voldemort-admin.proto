@@ -130,6 +130,15 @@ message AddStoreResponse {
   optional Error error = 1;
 }
 
+message AllKeysRequest {
+    required string store = 1;
+}
+
+message AllKeysResponse {
+  optional Error error = 1;
+  repeated bytes key = 2;
+}
+
 enum AdminRequestType {
   GET_METADATA = 0;
   UPDATE_METADATA = 1;
@@ -143,6 +152,7 @@ enum AdminRequestType {
   ASYNC_OPERATION_LIST = 9;
   TRUNCATE_ENTRIES = 10;
   ADD_STORE = 11;
+  ALL_KEYS = 12;
 }
 
 message VoldemortAdminRequest {
@@ -159,6 +169,7 @@ message VoldemortAdminRequest {
   optional AsyncOperationListRequest async_operation_list = 11;
   optional TruncateEntriesRequest truncate_entries = 12;
   optional AddStoreRequest add_store = 13;
+  optional AllKeysRequest all_keys = 14;
 }
 
 

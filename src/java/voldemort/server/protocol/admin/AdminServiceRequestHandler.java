@@ -161,6 +161,9 @@ public class AdminServiceRequestHandler implements RequestHandler {
             case ADD_STORE:
                 ProtoUtils.writeMessage(outputStream, handleAddStore(request.getAddStore()));
                 break;
+            case ALL_KEYS:
+                ProtoUtils.writeMessage(outputStream, handleAllKeys(request.getAllKeys()));
+                break;
             default:
                 throw new VoldemortException("Unkown operation " + request.getType());
         }
@@ -497,6 +500,26 @@ public class AdminServiceRequestHandler implements RequestHandler {
             }
 
         } catch(VoldemortException e) {
+            response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
+            logger.error("handleAddStore failed for request(" + request.toString() + ")", e);
+        }
+
+        return response.build();
+    }
+
+    public VAdminProto.AllKeysResponse handleAllKeys(VAdminProto.AllKeysRequest request) {
+        String storeName = request.getStore();
+        VAdminProto.AllKeysResponse.Builder response = VAdminProto.AllKeysResponse.newBuilder();
+
+        try {
+            StorageEngine<ByteArray, byte[]> storageEngine = getStorageEngine(storeRepository, storeName);
+            ClosableIterator<ByteArray> keys = storageEngine.keys();
+            while (keys.hasNext()) {
+                ByteArray key = keys.next();
+                response.addKey(ProtoUtils.encodeBytes(key));
+            }
+        }
+        catch(VoldemortException e) {
             response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
             logger.error("handleAddStore failed for request(" + request.toString() + ")", e);
         }

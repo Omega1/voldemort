@@ -21,11 +21,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -1101,6 +1097,35 @@ public class AdminClient {
             if(response.hasError())
                 throwException(response.getError());
         }
+    }
+
+    /**
+     * Returns a set of all keys for a store from all active nodes in the cluster.
+     *
+     * @return a set of all keys for a store from all active nodes in the cluster.
+     */
+    public Set<ByteArray> getAllKeys(String storeName) {
+        VAdminProto.AllKeysRequest.Builder allKeysRequest = VAdminProto.AllKeysRequest.newBuilder().setStore(storeName);
+
+        VAdminProto.VoldemortAdminRequest request = VAdminProto.VoldemortAdminRequest.newBuilder()
+                                                                                         .setType(VAdminProto.AdminRequestType.ALL_KEYS)
+                                                                                         .setAllKeys(allKeysRequest)
+                                                                                         .build();
+        Set<ByteArray> keys = new HashSet<ByteArray>();
+
+        for (Node node : currentCluster.getNodes()) {
+            VAdminProto.AllKeysResponse.Builder response = sendAndReceive(node.getId(),
+                                                                           request,
+                                                                           VAdminProto.AllKeysResponse.newBuilder());
+            if(response.hasError())
+                throwException(response.getError());
+
+            for (int i = 0; i< response.getKeyCount(); i++) {
+                keys.add(ProtoUtils.decodeBytes(response.getKey(i)));
+            }
+        }
+
+        return keys;
     }
 
     /**
