@@ -105,7 +105,7 @@ public class AdminClient {
     private Cluster currentCluster;
 
     /**
-     * Create an instance of AdminClient given a bootstrap server URL. The
+     * Create an instance of AdminClient given a URL of a node in the cluster. The
      * bootstrap URL is used to get the cluster metadata.
      * 
      * @param bootstrapURL URL pointing to the bootstrap node
@@ -230,38 +230,40 @@ public class AdminClient {
         boolean firstMessage = true;
 
         try {
-            while(entryIterator.hasNext()) {
-                Pair<ByteArray, Versioned<byte[]>> entry = entryIterator.next();
-                VAdminProto.PartitionEntry partitionEntry = VAdminProto.PartitionEntry.newBuilder()
-                                                                                      .setKey(ProtoUtils.encodeBytes(entry.getFirst()))
-                                                                                      .setVersioned(ProtoUtils.encodeVersioned(entry.getSecond()))
-                                                                                      .build();
-                VAdminProto.UpdatePartitionEntriesRequest.Builder updateRequest = VAdminProto.UpdatePartitionEntriesRequest.newBuilder()
-                                                                                                                           .setStore(storeName)
-                                                                                                                           .setPartitionEntry(partitionEntry);
+            if(entryIterator.hasNext()) {
+                while(entryIterator.hasNext()) {
+                    Pair<ByteArray, Versioned<byte[]>> entry = entryIterator.next();
+                    VAdminProto.PartitionEntry partitionEntry = VAdminProto.PartitionEntry.newBuilder()
+                                                                                          .setKey(ProtoUtils.encodeBytes(entry.getFirst()))
+                                                                                          .setVersioned(ProtoUtils.encodeVersioned(entry.getSecond()))
+                                                                                          .build();
+                    VAdminProto.UpdatePartitionEntriesRequest.Builder updateRequest = VAdminProto.UpdatePartitionEntriesRequest.newBuilder()
+                                                                                                                               .setStore(storeName)
+                                                                                                                               .setPartitionEntry(partitionEntry);
 
-                if(firstMessage) {
-                    if(filter != null) {
-                        updateRequest.setFilter(encodeFilter(filter));
+                    if(firstMessage) {
+                        if(filter != null) {
+                            updateRequest.setFilter(encodeFilter(filter));
+                        }
+
+                        ProtoUtils.writeMessage(outputStream,
+                                                VAdminProto.VoldemortAdminRequest.newBuilder()
+                                                                                 .setType(VAdminProto.AdminRequestType.UPDATE_PARTITION_ENTRIES)
+                                                                                 .setUpdatePartitionEntries(updateRequest)
+                                                                                 .build());
+                        outputStream.flush();
+                        firstMessage = false;
+                    } else {
+                        ProtoUtils.writeMessage(outputStream, updateRequest.build());
                     }
-
-                    ProtoUtils.writeMessage(outputStream,
-                                            VAdminProto.VoldemortAdminRequest.newBuilder()
-                                                                             .setType(VAdminProto.AdminRequestType.UPDATE_PARTITION_ENTRIES)
-                                                                             .setUpdatePartitionEntries(updateRequest)
-                                                                             .build());
-                    outputStream.flush();
-                    firstMessage = false;
-                } else {
-                    ProtoUtils.writeMessage(outputStream, updateRequest.build());
                 }
-            }
-            ProtoUtils.writeEndOfStream(outputStream);
-            outputStream.flush();
-            VAdminProto.UpdatePartitionEntriesResponse.Builder updateResponse = ProtoUtils.readToBuilder(inputStream,
-                                                                                                         VAdminProto.UpdatePartitionEntriesResponse.newBuilder());
-            if(updateResponse.hasError()) {
-                throwException(updateResponse.getError());
+                ProtoUtils.writeEndOfStream(outputStream);
+                outputStream.flush();
+                VAdminProto.UpdatePartitionEntriesResponse.Builder updateResponse = ProtoUtils.readToBuilder(inputStream,
+                                                                                                             VAdminProto.UpdatePartitionEntriesResponse.newBuilder());
+                if(updateResponse.hasError()) {
+                    throwException(updateResponse.getError());
+                }
             }
         } catch(IOException e) {
             close(sands.getSocket());
@@ -1055,8 +1057,8 @@ public class AdminClient {
     }
 
     /**
-     * Retrieve the server state (
-     * {@link voldemort.store.metadata.MetadataStore.VoldemortState}) from a
+     * Retrieve the server
+     * {@link voldemort.store.metadata.MetadataStore.VoldemortState state} from a
      * remote node.
      */
     public Versioned<VoldemortState> getRemoteServerState(int nodeId) {
@@ -1066,10 +1068,9 @@ public class AdminClient {
     }
 
     /**
-     * <<<<<<< HEAD update serverState on a remote node.
-     * 
-     * @param nodeId
-     * @param state
+     * Update the server
+     * {@link voldemort.store.metadata.MetadataStore.VoldemortState state}
+     * on a remote node.
      */
     public void updateRemoteClusterState(int nodeId,
                                          MetadataStore.VoldemortState state,
