@@ -255,7 +255,7 @@ public abstract class AbstractStoreClientFactory implements StoreClientFactory {
                 if(found.size() == 1)
                     return found.get(0).getValue();
             } catch(Exception e) {
-                logger.warn("Failed to bootstrap from " + url, e);
+                logger.warn("Failed to bootstrap from " + url);
             }
         }
         throw new BootstrapFailureException("No available bootstrap servers found!");
