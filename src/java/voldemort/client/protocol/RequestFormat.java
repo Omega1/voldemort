@@ -76,4 +76,11 @@ public interface RequestFormat {
                                    RequestRoutingType routingType) throws IOException;
 
     public boolean readDeleteResponse(DataInputStream input) throws IOException;
+
+    public void writeDeleteAllRequest(DataOutputStream output,
+                                   String storeName,
+                                   Map<ByteArray, VectorClock> keys,
+                                   RequestRoutingType routingType) throws IOException;
+
+    public boolean readDeleteAllResponse(DataInputStream input) throws IOException;
 }

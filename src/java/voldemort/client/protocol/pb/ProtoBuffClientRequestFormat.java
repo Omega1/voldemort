@@ -81,6 +81,38 @@ public class ProtoBuffClientRequestFormat implements RequestFormat {
         return response.getSuccess();
     }
 
+    public void writeDeleteAllRequest(DataOutputStream output,
+                                   String storeName,
+                                   Map<ByteArray, VectorClock> keys,
+                                   RequestRoutingType routingType) throws IOException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+
+        VProto.DeleteAllRequest.Builder req = VProto.DeleteAllRequest.newBuilder();
+        for (Map.Entry<ByteArray, VectorClock> entry : keys.entrySet()) {
+            VProto.KeyedVersion.Builder keyVersion = VProto.KeyedVersion.newBuilder();
+            keyVersion.setKey(ByteString.copyFrom(entry.getKey().get()));
+            keyVersion.setVersion(ProtoUtils.encodeClock(entry.getValue()));
+            req.addDelete(keyVersion);
+        }
+
+        ProtoUtils.writeMessage(output,
+                                VProto.VoldemortRequest.newBuilder()
+                                                       .setType(RequestType.DELETE_ALL)
+                                                       .setStore(storeName)
+                                                       .setShouldRoute(routingType.equals(RequestRoutingType.ROUTED))
+                                                       .setRequestRouteType(routingType.getRoutingTypeCode())
+                                                       .setDeleteAll(req)
+                                                       .build());
+    }
+
+    public boolean readDeleteAllResponse(DataInputStream input) throws IOException {
+        VProto.DeleteAllResponse.Builder response = ProtoUtils.readToBuilder(input,
+                                                                   VProto.DeleteAllResponse.newBuilder());
+        if(response.hasError())
+            throwException(response.getError());
+        return response.getSuccess();
+    }
+
     public void writeGetRequest(DataOutputStream output,
                                 String storeName,
                                 ByteArray key,

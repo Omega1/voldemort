@@ -24,6 +24,8 @@ import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Maps;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
@@ -82,6 +84,31 @@ public class HttpStore implements Store<ByteArray, byte[]> {
                                              reroute);
             DataInputStream input = executeRequest(method, outputBytes);
             return requestFormat.readDeleteResponse(input);
+        } catch(IOException e) {
+            throw new UnreachableStoreException("Could not connect to " + storeUrl + " for "
+                                                + storeName, e);
+        } finally {
+            if(method != null)
+                method.releaseConnection();
+        }
+    }
+
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        PostMethod method = null;
+        try {
+            method = new PostMethod(this.storeUrl);
+            ByteArrayOutputStream outputBytes = new ByteArrayOutputStream();
+            requestFormat.writeDeleteAllRequest(new DataOutputStream(outputBytes),
+                                             storeName,
+                                             Maps.transformValues(keys, new Function<Version, VectorClock>() {
+                                                 public VectorClock apply(Version version) {
+                                                     return (VectorClock) version;
+                                                 }
+                                             }),
+                                             reroute);
+            DataInputStream input = executeRequest(method, outputBytes);
+            return requestFormat.readDeleteAllResponse(input);
         } catch(IOException e) {
             throw new UnreachableStoreException("Could not connect to " + storeUrl + " for "
                                                 + storeName, e);

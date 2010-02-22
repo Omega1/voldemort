@@ -47,6 +47,11 @@ public class PausableStorageEngine<K, V> implements StorageEngine<K, V> {
         return inner.delete(key);
     }
 
+    public boolean deleteAll(Map<K, Version> keys) throws VoldemortException {
+        blockIfNecessary();
+        return inner.deleteAll(keys);
+    }
+
     private void blockIfNecessary() {
         synchronized(condition) {
             while(paused) {

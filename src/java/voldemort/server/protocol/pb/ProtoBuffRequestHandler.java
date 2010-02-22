@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.Maps;
 import voldemort.VoldemortException;
 import voldemort.client.protocol.pb.ProtoUtils;
 import voldemort.client.protocol.pb.VProto;
@@ -68,6 +69,9 @@ public class ProtoBuffRequestHandler extends AbstractRequestHandler {
                     break;
                 case DELETE:
                     response = handleDelete(request.getDelete(), store);
+                    break;
+                case DELETE_ALL:
+                    response = handleDeleteAll(request.getDeleteAll(), store);
                     break;
                 case GET_VERSION:
                     response = handleGetVersion(request.getGet(), store);
@@ -154,6 +158,21 @@ public class ProtoBuffRequestHandler extends AbstractRequestHandler {
             response.setSuccess(success);
         } catch(VoldemortException e) {
             response.setSuccess(false);
+            response.setError(ProtoUtils.encodeError(getErrorMapper(), e));
+        }
+        return response.build();
+    }
+
+    private VProto.DeleteAllResponse handleDeleteAll(VProto.DeleteAllRequest request,
+                                               Store<ByteArray, byte[]> store) {
+        VProto.DeleteAllResponse.Builder response = VProto.DeleteAllResponse.newBuilder();
+        try {
+            Map<ByteArray, Version> keys = Maps.newHashMap();
+            for (VProto.KeyedVersion keyedVersion : request.getDeleteList()) {
+                keys.put(ProtoUtils.decodeBytes(keyedVersion.getKey()), ProtoUtils.decodeClock(keyedVersion.getVersion()));
+            }
+            response.setSuccess(store.deleteAll(keys));
+        } catch(VoldemortException e) {
             response.setError(ProtoUtils.encodeError(getErrorMapper(), e));
         }
         return response.build();

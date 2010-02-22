@@ -24,12 +24,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.Maps;
 import org.apache.commons.io.FileDeleteStrategy;
 
 import voldemort.TestUtils;
 import voldemort.store.AbstractStoreTest;
 import voldemort.store.Store;
 import voldemort.versioning.VectorClock;
+import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
 
 public class ConfigurationStorageEngineTest extends AbstractStoreTest<String, String> {
@@ -83,6 +85,26 @@ public class ConfigurationStorageEngineTest extends AbstractStoreTest<String, St
 
         // now delete that version too
         assertTrue("Delete failed!", store.delete(key, c1));
+        assertEquals(0, store.get(key).size());
+    }
+
+    @Override
+    public void testDeleteAll() {
+        String key = getKey();
+        Store<String, String> store = getStore();
+        VectorClock c1 = getClock(1, 1);
+        String value = getValue();
+
+        // can't delete something that isn't there
+        Map<String, Version> keys = Maps.newHashMap();
+        keys.put(key, c1);
+        assertTrue(!store.deleteAll(keys));
+
+        store.put(key, new Versioned<String>(value, c1));
+        assertEquals(1, store.get(key).size());
+
+        // now delete that version too
+        assertTrue("Delete failed!", store.deleteAll(keys));
         assertEquals(0, store.get(key).size());
     }
 

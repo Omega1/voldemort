@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.Maps;
 import junit.framework.TestCase;
 
 import org.junit.Test;
@@ -136,6 +137,13 @@ public abstract class AbstractStoreTest<K, V> extends TestCase {
         } catch(IllegalArgumentException e) {
             // this is good
         }
+
+        try {
+            store.deleteAll(null);
+            fail("Store should not delete null keys!");
+        } catch(IllegalArgumentException e) {
+            // this is good
+        }
     }
 
     public void testPutNullValue() {
@@ -158,6 +166,9 @@ public abstract class AbstractStoreTest<K, V> extends TestCase {
                                                                                         2,
                                                                                         3,
                                                                                         3)));
+        Map<K, Version> keys = Maps.newHashMap();
+        keys.put(key, getClock(1, 1, 2, 2, 3, 3));
+        assertTrue("Delete of non-existent key succeeded.", !store.deleteAll(keys));
     }
 
     private void testObsoletePutFails(String message,
@@ -263,6 +274,54 @@ public abstract class AbstractStoreTest<K, V> extends TestCase {
         // now delete that version too
         assertTrue("Delete failed!", store.delete(key, c2));
         assertEquals(0, store.get(key).size());
+    }
+
+    public void testDeleteAll() throws Exception {
+        K key1 = getKey();
+        Store<K, V> store = getStore();
+        VectorClock c1 = getClock(1, 1);
+        VectorClock c2 = getClock(1, 2);
+        V value = getValue();
+
+        // can't delete something that isn't there
+        Map<K, Version> keys = Maps.newHashMap();
+        keys.put(key1, c1);
+        assertTrue(!store.deleteAll(keys));
+
+        // put two conflicting versions, then delete one
+        Versioned<V> v1 = new Versioned<V>(value, c1);
+        Versioned<V> v2 = new Versioned<V>(value, c2);
+        store.put(key1, v1);
+        store.put(key1, v2);
+
+        keys = Maps.newHashMap();
+        keys.put(key1, v1.getVersion());
+        assertTrue("DeleteAll failed!", store.deleteAll(keys));
+        List<Versioned<V>> found = store.get(key1);
+
+        // check that there is a single remaining version, namely the
+        // non-deleted
+        assertEquals(1, found.size());
+        assertEquals(v2.getVersion(), found.get(0).getVersion());
+        assertTrue(valuesEqual(v2.getValue(), found.get(0).getValue()));
+
+        // now delete that version too
+        keys = Maps.newHashMap();
+        keys.put(key1, v2.getVersion());
+        assertTrue("DeleteAll failed!", store.deleteAll(keys));
+        assertEquals(0, store.get(key1).size());
+
+        // now create multiple keys
+        List<K> k = getKeys(5);
+        keys = Maps.newHashMap();
+        v1 = new Versioned<V>(value, c1);
+        for (K key : k) {
+            store.put(key, v1);
+            keys.put(key, v1.getVersion());
+        }
+
+        assertTrue("DeleteAll failed!", store.deleteAll(keys));
+        assertEquals(0, store.get(key1).size());
     }
 
     public void testGetVersions() throws Exception {

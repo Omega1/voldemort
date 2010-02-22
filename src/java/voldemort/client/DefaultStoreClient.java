@@ -16,6 +16,7 @@
 
 package voldemort.client;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -86,6 +87,31 @@ public class DefaultStoreClient<K, V> implements StoreClient<K, V> {
         if(versioned == null)
             return false;
         return delete(key, versioned.getVersion());
+    }
+
+    public boolean deleteAll(Iterable<K> keys) {
+        Map<K, Versioned<V>> map = getAll(keys);
+        if (map == null || map.isEmpty()) {
+            return false;
+        }
+        // transform the map
+        Map<K, Version> deleteAllMap = new HashMap<K, Version>(map.size());
+        for (Entry<K, Versioned<V>> entry : map.entrySet()) {
+            if (entry.getValue() == null) {
+                continue;
+            }
+            deleteAllMap.put(entry.getKey(), entry.getValue().getVersion());
+        }
+
+        for(int attempts = 0; attempts < this.metadataRefreshAttempts; attempts++) {
+            try {
+                return store.deleteAll(deleteAllMap);
+            } catch(InvalidMetadataException e) {
+                bootStrap();
+            }
+        }
+        throw new VoldemortException(this.metadataRefreshAttempts
+                                     + " metadata refresh attempts failed.");
     }
 
     public boolean delete(K key, Version version) {

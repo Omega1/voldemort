@@ -53,9 +53,9 @@ public class MysqlStorageEngineTest extends AbstractStorageEngineTest {
 
     private DataSource getDataSource() {
         BasicDataSource ds = new BasicDataSource();
-        ds.setUrl("jdbc:mysql://localhost:3306/test");
-        ds.setUsername("root");
-        ds.setPassword("");
+        ds.setUrl("jdbc:mysql://localhost:3306/voldemort");
+        ds.setUsername("voldemort");
+        ds.setPassword("voldemort");
         ds.setDriverClassName("com.mysql.jdbc.Driver");
         return ds;
     }

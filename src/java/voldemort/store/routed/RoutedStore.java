@@ -202,7 +202,7 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
         final List<Exception> failures = Collections.synchronizedList(new LinkedList<Exception>());
 
         // A semaphore indicating the number of completed operations
-        // Once inititialized all permits are acquired, after that
+        // Once initialized all permits are acquired, after that
         // permits are released when an operation is completed.
         // semaphore.acquire(n) waits for n operations to complete
         final Semaphore semaphore = new Semaphore(0, false);
@@ -266,6 +266,101 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
                                                             failures);
         else
             return deletedSomething.get();
+    }
+
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+
+        final AtomicBoolean deletedSomething = new AtomicBoolean(false);
+
+        // Keys for each node needed to satisfy storeDef.getPreferredWrites() if no failures.
+        Map<Node, Map<ByteArray, Version>> nodeToKeysMap = Maps.newHashMap();
+
+        for(ByteArray key: keys.keySet()) {
+            List<Node> availableNodes = availableNodes(routingStrategy.routeRequest(key.get()));
+
+            // quickly fail if there aren't enough nodes to meet the requirement
+            checkRequiredWrites(availableNodes);
+
+            for(Node node: availableNodes) {
+                Map<ByteArray, Version> nodeKeys = nodeToKeysMap.get(node);
+                if(nodeKeys == null) {
+                    nodeKeys = Maps.newHashMap();
+                    nodeToKeysMap.put(node, nodeKeys);
+                }
+                nodeKeys.put(key, keys.get(key));
+            }
+        }
+
+        List<Callable<DeleteAllResult>> callables = Lists.newArrayList();
+        for(Map.Entry<Node, Map<ByteArray, Version>> entry: nodeToKeysMap.entrySet()) {
+            final Node node = entry.getKey();
+            final Map<ByteArray, Version> nodeKeys = entry.getValue();
+            if(failureDetector.isAvailable(node))
+                callables.add(new DeleteAllCallable(node, nodeKeys));
+        }
+
+        // A list of thrown exceptions, indicating the number of failures
+        List<Throwable> failures = Lists.newArrayList();
+
+        Map<ByteArray, MutableInt> keyToSuccessCount = Maps.newHashMap();
+        for(ByteArray key: keys.keySet())
+            keyToSuccessCount.put(key, new MutableInt(0));
+
+        List<Future<DeleteAllResult>> futures;
+        try {
+            // TODO What to do about timeouts? They should be longer as deleteAll
+            // is likely to
+            // take longer. At the moment, it's just timeoutMs * 3, but should
+            // this be based on the number of the keys?
+            futures = executor.invokeAll(callables, timeoutMs * 3, TimeUnit.MILLISECONDS);
+        } catch(InterruptedException e) {
+            throw new InsufficientOperationalNodesException("deleteAll operation interrupted.", e);
+        }
+
+        for(Future<DeleteAllResult> f: futures) {
+            if(f.isCancelled()) {
+                logger.warn("deleteAll operation timed out after " + timeoutMs + " ms.");
+                continue;
+            }
+            try {
+                DeleteAllResult result = f.get();
+                if(result.exception != null) {
+                    if(result.exception instanceof VoldemortApplicationException) {
+                        throw (VoldemortException) result.exception;
+                    }
+                    failures.add(result.exception);
+                    continue;
+                }
+                deletedSomething.compareAndSet(false, result.deletedSomething);
+                for(ByteArray key: result.callable.nodeKeys.keySet()) {
+                    MutableInt successCount = keyToSuccessCount.get(key);
+                    successCount.increment();
+                }
+            } catch(InterruptedException e) {
+                throw new InsufficientOperationalNodesException("deleteAll operation interrupted.", e);
+            } catch(ExecutionException e) {
+                // We catch all Throwables apart from Error in the callable, so
+                // the else part
+                // should never happen
+                if(e.getCause() instanceof Error)
+                    throw (Error) e.getCause();
+                else
+                    logger.error(e.getMessage(), e);
+            }
+        }
+
+        for(Map.Entry<ByteArray, MutableInt> mapEntry: keyToSuccessCount.entrySet()) {
+            int successCount = mapEntry.getValue().intValue();
+            if(successCount < storeDef.getRequiredWrites())
+                throw new InsufficientOperationalNodesException(this.storeDef.getRequiredWrites()
+                                                                        + " deletes required, but "
+                                                                        + successCount
+                                                                        + " succeeded.",
+                                                                failures);
+        }
+
+        return deletedSomething.get();
     }
 
     public Map<ByteArray, List<Versioned<byte[]>>> getAll(Iterable<ByteArray> keys)
@@ -624,6 +719,15 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
                                                             + " reads required.");
     }
 
+    private void checkRequiredWrites(final List<Node> nodes)
+            throws InsufficientOperationalNodesException {
+        if(nodes.size() < this.storeDef.getRequiredWrites())
+            throw new InsufficientOperationalNodesException("Only " + nodes.size()
+                                                            + " nodes in preference list, but "
+                                                            + this.storeDef.getRequiredWrites()
+                                                            + " writes required.");
+    }
+
     private <R> String formatNodeValues(List<GetResult<R>> results) {
         // log all retrieved values
         StringBuilder builder = new StringBuilder();
@@ -975,6 +1079,55 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
             this.exception = exception;
             this.retrieved = retrieved;
             this.nodeValues = nodeValues;
+        }
+    }
+
+    private final class DeleteAllCallable implements Callable<DeleteAllResult> {
+
+        private final Node node;
+        private final Map<ByteArray, Version> nodeKeys;
+
+        private DeleteAllCallable(Node node, Map<ByteArray, Version> nodeKeys) {
+            this.node = node;
+            this.nodeKeys = nodeKeys;
+        }
+
+        public DeleteAllResult call() {
+            boolean deletedSomething = false;
+            Throwable exception = null;
+            long startNs = System.nanoTime();
+
+            try {
+                deletedSomething = innerStores.get(node.getId()).deleteAll(nodeKeys);
+                recordSuccess(node, startNs);
+            } catch(UnreachableStoreException e) {
+                exception = e;
+                recordException(node, startNs, e);
+            } catch(Throwable e) {
+                if(e instanceof Error)
+                    throw (Error) e;
+                exception = e;
+                logger.warn("Error in DeleteAll on node " + node.getId() + "(" + node.getHost() + ")", e);
+            }
+
+            return new DeleteAllResult(this, deletedSomething, exception);
+        }
+    }
+
+    private static class DeleteAllResult {
+
+        final DeleteAllCallable callable;
+        final boolean deletedSomething;
+        /* Note that this can never be an Error subclass */
+        final Throwable exception;
+
+        private DeleteAllResult(DeleteAllCallable callable,
+                             boolean deletedSomething,
+                             Throwable exception)
+        {
+            this.callable = callable;
+            this.exception = exception;
+            this.deletedSomething = deletedSomething;
         }
     }
 

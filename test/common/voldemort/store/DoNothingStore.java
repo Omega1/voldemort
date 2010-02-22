@@ -56,6 +56,11 @@ public class DoNothingStore<K, V> implements Store<K, V> {
         return true;
     }
 
+    public boolean deleteAll(Map<K, Version> keys) throws VoldemortException {
+        // Do nothing
+        return true;
+    }
+
     public void put(K key, Versioned<V> value) throws VoldemortException {
     // Do nothing
     }

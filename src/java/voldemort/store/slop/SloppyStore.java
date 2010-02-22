@@ -16,10 +16,7 @@
 
 package voldemort.store.slop;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import voldemort.VoldemortException;
 import voldemort.store.DelegatingStore;
@@ -101,6 +98,35 @@ public class SloppyStore extends DelegatingStore<ByteArray, byte[]> {
             throw new InsufficientOperationalNodesException("All slop servers are unavailable from node "
                                                                     + node + ".",
                                                             failures);
+        }
+    }
+
+    @Override
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        try {
+            return getInnerStore().deleteAll(keys);
+        } catch(UnreachableStoreException e) {
+            List<Exception> failures = new ArrayList<Exception>();
+            failures.add(e);
+
+            for (Map.Entry<ByteArray, Version> entry : keys.entrySet()) {
+                Slop slop = new Slop(getName(), Slop.Operation.DELETE, entry.getKey(), null, node, new Date());
+                for(Store<ByteArray, Slop> slopStore: backupStores) {
+                    try {
+                        slopStore.put(slop.makeKey(), new Versioned<Slop>(slop, entry.getValue()));
+
+                    } catch(UnreachableStoreException u) {
+                        failures.add(u);
+                    }
+                }
+                // if we get here that means all backup stores have failed
+                throw new InsufficientOperationalNodesException("All slop servers are unavailable from node "
+                                                                        + node + ".",
+                                                                failures);
+            }
+
+            return false;
         }
     }
 

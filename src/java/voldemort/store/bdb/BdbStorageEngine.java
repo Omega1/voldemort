@@ -370,6 +370,43 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[]> {
         }
     }
 
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        boolean deletedSomething = false;
+        Cursor cursor = null;
+        Transaction transaction = null;
+        try {
+            transaction = this.environment.beginTransaction(null, null);
+            cursor = getBdbDatabase().openCursor(transaction, null);
+
+            for (Map.Entry<ByteArray, Version> entry : keys.entrySet()) {
+                DatabaseEntry keyEntry = new DatabaseEntry(entry.getKey().get());
+                DatabaseEntry valueEntry = new DatabaseEntry();
+                OperationStatus status = cursor.getSearchKey(keyEntry,
+                                                             valueEntry,
+                                                             LockMode.READ_UNCOMMITTED);
+                while(status == OperationStatus.SUCCESS) {
+                    // if version is null no comparison is necessary
+                    if(new VectorClock(valueEntry.getData()).compare(entry.getValue()) == Occured.BEFORE) {
+                        cursor.delete();
+                        deletedSomething = true;
+                    }
+                    status = cursor.getNextDup(keyEntry, valueEntry, LockMode.READ_UNCOMMITTED);
+                }
+            }
+            return deletedSomething;
+        } catch(DatabaseException e) {
+            logger.error(e);
+            throw new PersistenceFailureException(e);
+        } finally {
+            try {
+                attemptClose(cursor);
+            } finally {
+                attemptCommit(transaction);
+            }
+        }
+    }
+
     public Object getCapability(StoreCapabilityType capability) {
         throw new NoSuchCapabilityException(capability, getName());
     }

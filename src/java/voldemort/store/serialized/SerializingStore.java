@@ -65,6 +65,15 @@ public class SerializingStore<K, V> implements Store<K, V> {
         return store.delete(keyToBytes(key), version);
     }
 
+    public boolean deleteAll(Map<K, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        Map<ByteArray, Version> serializedMap = Maps.newHashMap();
+        for (Map.Entry<K, Version> entry : keys.entrySet()) {
+            serializedMap.put(keyToBytes(entry.getKey()), entry.getValue());
+        }
+        return store.deleteAll(serializedMap);
+    }
+
     private ByteArray keyToBytes(K key) {
         return new ByteArray(keySerializer.toBytes(key));
     }

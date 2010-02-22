@@ -16,21 +16,12 @@
 
 package voldemort.store.socket;
 
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
-
 import voldemort.ServerTestUtils;
 import voldemort.TestUtils;
 import voldemort.VoldemortTestConstants;
@@ -39,7 +30,18 @@ import voldemort.server.AbstractSocketService;
 import voldemort.store.AbstractByteArrayStoreTest;
 import voldemort.store.Store;
 import voldemort.utils.ByteArray;
+import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
+
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * A base-socket store test that works with any store RequestFormat
@@ -107,6 +109,19 @@ public abstract class AbstractSocketStoreTest extends AbstractByteArrayStoreTest
             assertNotNull(store.get(key));
             assertTrue(store.delete(key, versioned.getVersion()));
         }
+
+        Map<ByteArray, Version> keys = Maps.newHashMap();
+        for(int i = 0; i < 10; i++) {
+            rand.nextBytes(biggie);
+            key = new ByteArray(biggie);
+            Versioned<byte[]> v = new Versioned<byte[]>(biggie);
+            keys.put(key, v.getVersion());
+            store.put(key, v);
+            assertNotNull(store.get(key));
+        }
+
+        assertTrue(store.deleteAll(keys));
+        assertEquals(0, store.getAll(keys.keySet()).size());
     }
 
     @Test

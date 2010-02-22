@@ -147,6 +147,23 @@ public class RedirectingStore extends DelegatingStore<ByteArray, byte[]> {
         return getInnerStore().delete(key, version);
     }
 
+    /**
+     * TODO : handle delete correctly <br>
+     * option1: delete locally and on remote node as well, the issue is cursor
+     * is open in READ_UNCOMMITED mode while rebalancing and can push the value
+     * back.<br>
+     * option2: keep it in separate slop store and apply deletes at the end of
+     * rebalancing.<br>
+     * option3: donot worry about deletes for now, voldemort in general have
+     * this issue if node went down while delete will still keep the old
+     * version.
+     */
+    @Override
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        return getInnerStore().deleteAll(keys);
+    }
+
     protected boolean checkKeyBelongsToStolenPartitions(ByteArray key) {
         for(int partitionId: metadata.getRoutingStrategy(getName()).getPartitionList(key.get())) {
             if(metadata.getRebalancingStealInfo().getPartitionList().contains(partitionId)) {

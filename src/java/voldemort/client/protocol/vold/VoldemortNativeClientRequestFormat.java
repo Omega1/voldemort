@@ -76,6 +76,33 @@ public class VoldemortNativeClientRequestFormat implements RequestFormat {
         return inputStream.readBoolean();
     }
 
+    public void writeDeleteAllRequest(DataOutputStream outputStream,
+                                      String storeName,
+                                      Map<ByteArray, VectorClock> keys,
+                                      RequestRoutingType routingType) throws IOException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        outputStream.writeByte(VoldemortOpCode.DELETE_ALL_OP_CODE);
+        outputStream.writeUTF(storeName);
+        outputStream.writeBoolean(routingType.equals(RequestRoutingType.ROUTED));
+        if(protocolVersion >= 2) {
+            outputStream.writeByte(routingType.getRoutingTypeCode());
+        }
+        outputStream.writeInt(keys.size());        
+        for (Map.Entry<ByteArray, VectorClock> entry : keys.entrySet()) {
+            ByteArray key = entry.getKey();
+            outputStream.writeInt(key.length());
+            outputStream.write(key.get());
+            VectorClock clock = keys.get(key);
+            outputStream.writeShort(clock.sizeInBytes());
+            outputStream.write(clock.toBytes());
+        }
+    }
+
+    public boolean readDeleteAllResponse(DataInputStream inputStream) throws IOException {
+        checkException(inputStream);
+        return inputStream.readBoolean();
+    }
+
     public void writeGetRequest(DataOutputStream outputStream,
                                 String storeName,
                                 ByteArray key,

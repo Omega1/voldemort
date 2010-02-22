@@ -24,6 +24,10 @@ public class FailingReadsStore<K, V> implements Store<K, V> {
         return engine.delete(key, version);
     }
 
+    public boolean deleteAll(Map<K, Version> keys) throws VoldemortException {
+        return engine.deleteAll(keys);
+    }
+
     public List<Versioned<V>> get(K key) throws VoldemortException {
         throw new VoldemortException("Operation failed");
     }

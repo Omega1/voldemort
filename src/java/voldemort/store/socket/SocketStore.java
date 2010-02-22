@@ -21,6 +21,8 @@ import java.net.Socket;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
@@ -94,6 +96,29 @@ public class SocketStore implements Store<ByteArray, byte[]> {
         } catch(IOException e) {
             close(sands.getSocket());
             throw new UnreachableStoreException("Failure in delete on " + destination + ": "
+                                                + e.getMessage(), e);
+        } finally {
+            pool.checkin(destination, sands);
+        }
+    }
+
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        SocketAndStreams sands = pool.checkout(destination);
+        try {
+            requestFormat.writeDeleteAllRequest(sands.getOutputStream(),
+                                             name,
+                                             Maps.transformValues(keys, new Function<Version, VectorClock>() {
+                                                 public VectorClock apply(Version version) {
+                                                     return (VectorClock) version;
+                                                 }
+                                             }),
+                                             requestType);
+            sands.getOutputStream().flush();
+            return requestFormat.readDeleteAllResponse(sands.getInputStream());
+        } catch(IOException e) {
+            close(sands.getSocket());
+            throw new UnreachableStoreException("Failure in deleteAll on " + destination + ": "
                                                 + e.getMessage(), e);
         } finally {
             pool.checkin(destination, sands);

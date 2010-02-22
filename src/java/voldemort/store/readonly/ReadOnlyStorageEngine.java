@@ -378,6 +378,13 @@ public class ReadOnlyStorageEngine implements StorageEngine<ByteArray, byte[]> {
     /**
      * Not supported, throws UnsupportedOperationException if called
      */
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        throw new UnsupportedOperationException("DeleteAll is not supported on this store, it is read-only.");
+    }
+
+    /**
+     * Not supported, throws UnsupportedOperationException if called
+     */
     public void put(ByteArray key, Versioned<byte[]> value) throws VoldemortException {
         throw new UnsupportedOperationException("Put is not supported on this store, it is read-only.");
     }

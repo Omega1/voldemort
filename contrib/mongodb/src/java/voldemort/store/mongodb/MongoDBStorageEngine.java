@@ -279,6 +279,47 @@ public class MongoDBStorageEngine implements StorageEngine<ByteArray, byte[]> {
         }
     }
 
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        getTLS();
+        boolean deleteSomething = false;
+        DBCursor cur = null;
+
+        try {
+            for (Map.Entry<ByteArray, Version> entry : keys.entrySet()) {
+                ByteArray key = entry.getKey();
+                Version version = entry.getValue();
+                String strKey = new String(key.get());
+
+                cur = coll.find(new Doc(KEY, strKey));
+                for(Doc d: cur) {
+                    VectorClock existingClock = new VectorClock(d.getBytes(CLOCK));
+                    Occured occured = version.compare(existingClock);
+
+                    // TODO - Q : why not concurrently?
+                    if(occured == Occured.BEFORE) {
+                        coll.remove(new MongoSelector(d));
+                        deleteSomething = true;
+                    }
+                }
+                cur.close();
+            }
+        } catch(MongoDBIOException mioe) {
+            try {
+                init();
+            } catch(MongoDBException ee) {
+                ee.printStackTrace();
+            }
+            throw new VoldemortException(mioe);
+        } catch(MongoDBException e) {
+            throw new VoldemortException(e);
+        } finally {
+            closeCursor(cur);
+        }
+
+        return deleteSomething;
+    }
+
     public String getName() {
         return coll.getName();
     }

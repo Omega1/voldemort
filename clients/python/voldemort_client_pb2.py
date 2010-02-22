@@ -31,6 +31,10 @@ _REQUESTTYPE = descriptor.EnumDescriptor(
       name='GET_VERSION', index=4, number=4,
       options=None,
       type=None),
+    descriptor.EnumValueDescriptor(
+      name='DELETE_ALL', index=5, number=5,
+      options=None,
+      type=None),
   ],
   options=None,
 )
@@ -41,6 +45,7 @@ GET_ALL = 1
 PUT = 2
 DELETE = 3
 GET_VERSION = 4
+DELETE_ALL = 5
 
 
 
@@ -177,6 +182,35 @@ _KEYEDVERSIONS = descriptor.Descriptor(
       name='versions', full_name='voldemort.KeyedVersions.versions', index=1,
       number=2, type=11, cpp_type=10, label=3,
       default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],  # TODO(robinson): Implement.
+  enum_types=[
+  ],
+  options=None)
+
+
+_KEYEDVERSION = descriptor.Descriptor(
+  name='KeyedVersion',
+  full_name='voldemort.KeyedVersion',
+  filename='voldemort-client.proto',
+  containing_type=None,
+  fields=[
+    descriptor.FieldDescriptor(
+      name='key', full_name='voldemort.KeyedVersion.key', index=0,
+      number=1, type=12, cpp_type=9, label=2,
+      default_value="",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    descriptor.FieldDescriptor(
+      name='version', full_name='voldemort.KeyedVersion.version', index=1,
+      number=2, type=11, cpp_type=10, label=2,
+      default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
@@ -429,6 +463,57 @@ _DELETERESPONSE = descriptor.Descriptor(
   options=None)
 
 
+_DELETEALLREQUEST = descriptor.Descriptor(
+  name='DeleteAllRequest',
+  full_name='voldemort.DeleteAllRequest',
+  filename='voldemort-client.proto',
+  containing_type=None,
+  fields=[
+    descriptor.FieldDescriptor(
+      name='delete', full_name='voldemort.DeleteAllRequest.delete', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],  # TODO(robinson): Implement.
+  enum_types=[
+  ],
+  options=None)
+
+
+_DELETEALLRESPONSE = descriptor.Descriptor(
+  name='DeleteAllResponse',
+  full_name='voldemort.DeleteAllResponse',
+  filename='voldemort-client.proto',
+  containing_type=None,
+  fields=[
+    descriptor.FieldDescriptor(
+      name='success', full_name='voldemort.DeleteAllResponse.success', index=0,
+      number=1, type=8, cpp_type=7, label=2,
+      default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    descriptor.FieldDescriptor(
+      name='error', full_name='voldemort.DeleteAllResponse.error', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],  # TODO(robinson): Implement.
+  enum_types=[
+  ],
+  options=None)
+
+
 _VOLDEMORTREQUEST = descriptor.Descriptor(
   name='VoldemortRequest',
   full_name='voldemort.VoldemortRequest',
@@ -491,6 +576,13 @@ _VOLDEMORTREQUEST = descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    descriptor.FieldDescriptor(
+      name='deleteAll', full_name='voldemort.VoldemortRequest.deleteAll', index=8,
+      number=9, type=11, cpp_type=10, label=1,
+      default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -503,6 +595,7 @@ _VOLDEMORTREQUEST = descriptor.Descriptor(
 _VECTORCLOCK.fields_by_name['entries'].message_type = _CLOCKENTRY
 _VERSIONED.fields_by_name['version'].message_type = _VECTORCLOCK
 _KEYEDVERSIONS.fields_by_name['versions'].message_type = _VERSIONED
+_KEYEDVERSION.fields_by_name['version'].message_type = _VECTORCLOCK
 _GETRESPONSE.fields_by_name['versioned'].message_type = _VERSIONED
 _GETRESPONSE.fields_by_name['error'].message_type = _ERROR
 _GETVERSIONRESPONSE.fields_by_name['versions'].message_type = _VECTORCLOCK
@@ -513,11 +606,14 @@ _PUTREQUEST.fields_by_name['versioned'].message_type = _VERSIONED
 _PUTRESPONSE.fields_by_name['error'].message_type = _ERROR
 _DELETEREQUEST.fields_by_name['version'].message_type = _VECTORCLOCK
 _DELETERESPONSE.fields_by_name['error'].message_type = _ERROR
+_DELETEALLREQUEST.fields_by_name['delete'].message_type = _KEYEDVERSION
+_DELETEALLRESPONSE.fields_by_name['error'].message_type = _ERROR
 _VOLDEMORTREQUEST.fields_by_name['type'].enum_type = _REQUESTTYPE
 _VOLDEMORTREQUEST.fields_by_name['get'].message_type = _GETREQUEST
 _VOLDEMORTREQUEST.fields_by_name['getAll'].message_type = _GETALLREQUEST
 _VOLDEMORTREQUEST.fields_by_name['put'].message_type = _PUTREQUEST
 _VOLDEMORTREQUEST.fields_by_name['delete'].message_type = _DELETEREQUEST
+_VOLDEMORTREQUEST.fields_by_name['deleteAll'].message_type = _DELETEALLREQUEST
 
 class ClockEntry(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType
@@ -538,6 +634,10 @@ class Error(message.Message):
 class KeyedVersions(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType
   DESCRIPTOR = _KEYEDVERSIONS
+
+class KeyedVersion(message.Message):
+  __metaclass__ = reflection.GeneratedProtocolMessageType
+  DESCRIPTOR = _KEYEDVERSION
 
 class GetRequest(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType
@@ -574,6 +674,14 @@ class DeleteRequest(message.Message):
 class DeleteResponse(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType
   DESCRIPTOR = _DELETERESPONSE
+
+class DeleteAllRequest(message.Message):
+  __metaclass__ = reflection.GeneratedProtocolMessageType
+  DESCRIPTOR = _DELETEALLREQUEST
+
+class DeleteAllResponse(message.Message):
+  __metaclass__ = reflection.GeneratedProtocolMessageType
+  DESCRIPTOR = _DELETEALLRESPONSE
 
 class VoldemortRequest(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType

@@ -60,6 +60,10 @@ public class FailingStore<K, V> implements Store<K, V> {
         throw exception;
     }
 
+    public boolean deleteAll(Map<K, Version> keys) throws VoldemortException {
+        throw exception;
+    }
+
     public void put(K key, Versioned<V> value) throws VoldemortException {
         throw exception;
     }
