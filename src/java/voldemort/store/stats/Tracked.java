@@ -6,7 +6,8 @@ public enum Tracked {
     PUT("put"),
     DELETE("delete"),
     EXCEPTION("exception"),
-    OBSOLETE("obsolete");
+    OBSOLETE("obsolete"),
+    DELETE_ALL("deleteall");
 
     private final String name;
 

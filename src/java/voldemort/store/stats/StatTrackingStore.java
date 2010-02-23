@@ -67,7 +67,7 @@ public class StatTrackingStore<K, V> extends DelegatingStore<K, V> {
             stats.recordTime(Tracked.EXCEPTION, System.nanoTime() - start);
             throw e;
         } finally {
-            stats.recordTime(Tracked.DELETE, System.nanoTime() - start);
+            stats.recordTime(Tracked.DELETE_ALL, System.nanoTime() - start);
         }
     }
 

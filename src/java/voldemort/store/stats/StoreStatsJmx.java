@@ -80,6 +80,21 @@ public class StoreStatsJmx {
         return stats.getThroughput(Tracked.DELETE);
     }
 
+    @JmxGetter(name = "numberOfCallsToDeleteAll", description = "The number of calls to DELETE_ALL since the last reset.")
+    public long getNumberOfCallsToDeleteAll() {
+        return stats.getCount(Tracked.DELETE_ALL);
+    }
+
+    @JmxGetter(name = "averageDeleteAllCompletionTimeInMs", description = "The avg. time in ms for DELETE_ALL calls to complete.")
+    public double getAverageDeleteAllCompletionTimeInMs() {
+        return stats.getAvgTimeInMs(Tracked.DELETE_ALL);
+    }
+
+    @JmxGetter(name = "DeleteAllThroughput", description = "Throughput of DELETE_ALL requests.")
+    public float getDeleteAllThroughput() {
+        return stats.getThroughput(Tracked.DELETE_ALL);
+    }
+
     @JmxGetter(name = "numberOfObsoleteVersions", description = "Number of ObsoleteVersionExceptions since the last reset.")
     public long getNumberOfObsoleteVersions() {
         return stats.getCount(Tracked.OBSOLETE);
@@ -90,14 +105,15 @@ public class StoreStatsJmx {
         return stats.getCount(Tracked.EXCEPTION);
     }
 
-    @JmxGetter(name = "averageOperationTimeInMs", description = "The total nuber of all operations that have occured.")
+    @JmxGetter(name = "averageOperationTimeInMs", description = "The total number of all operations that have occured.")
     public double getAvgOperationCompletionTimeInMs() {
         double sum = 0.0;
         double weightedTime = 0.0;
         for(Tracked stat: ImmutableList.of(Tracked.DELETE,
                                            Tracked.GET,
                                            Tracked.GET_ALL,
-                                           Tracked.PUT)) {
+                                           Tracked.PUT,
+                                           Tracked.DELETE_ALL)) {
             sum += stats.getCount(stat);
             weightedTime += stats.getCount(stat) * stats.getAvgTimeInMs(stat);
         }
@@ -110,7 +126,8 @@ public class StoreStatsJmx {
     @JmxGetter(name = "AllOperationThroughput", description = "The number of exceptions since the last reset.")
     public double getOperationThroughput() {
         return stats.getThroughput(Tracked.DELETE) + stats.getThroughput(Tracked.GET)
-               + stats.getThroughput(Tracked.GET_ALL) + stats.getThroughput(Tracked.PUT);
+               + stats.getThroughput(Tracked.GET_ALL) + stats.getThroughput(Tracked.PUT)
+               + stats.getThroughput(Tracked.DELETE_ALL);
     }
 
 }
