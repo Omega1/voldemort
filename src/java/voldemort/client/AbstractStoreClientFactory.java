@@ -103,8 +103,9 @@ public abstract class AbstractStoreClientFactory implements StoreClientFactory {
         this.requestFormatType = config.getRequestFormatType();
         this.jmxId = jmxIdCounter.getAndIncrement();
         this.maxBootstrapRetries = config.getMaxBootstrapRetries();
-        this.stats = new StoreStats();
+        
         if(this.isJmxEnabled) {
+            this.stats = new StoreStats();
             JmxUtils.registerMbean(threadPool,
                                    JmxUtils.createObjectName(JmxUtils.getPackageName(threadPool.getClass()),
                                                              JmxUtils.getClassName(threadPool.getClass())
@@ -112,6 +113,9 @@ public abstract class AbstractStoreClientFactory implements StoreClientFactory {
             JmxUtils.registerMbean(new StoreStatsJmx(stats),
                                    JmxUtils.createObjectName("voldemort.store.stats.aggregate",
                                                              "aggregate-perf" + jmxId()));
+        }
+        else {
+            stats = null;
         }
     }
 
