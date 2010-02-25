@@ -27,8 +27,8 @@ public class StoreStats {
         counters = new EnumMap<Tracked, RequestCounter>(Tracked.class);
 
         for(Tracked tracked: Tracked.values()) {
-            // sliding window of 30 seconds, tracking up to a max of 100k ops
-            counters.put(tracked, new RequestCounter(30000, 100000));
+            // sliding window of 30 seconds, tracking up to a max of 10k ops
+            counters.put(tracked, new RequestCounter(30000, 10000));
         }
         this.parent = parent;
     }
