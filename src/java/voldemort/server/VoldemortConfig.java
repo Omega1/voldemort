@@ -42,7 +42,6 @@ import com.google.common.collect.ImmutableList;
 /**
  * Configuration parameters for the voldemort server.
  * 
- * @author jay
  * 
  */
 public class VoldemortConfig implements Serializable {
@@ -296,6 +295,7 @@ public class VoldemortConfig implements Serializable {
         this.rebalancingServicePeriod = props.getInt("rebalancing.service.period.ms", 1000);
         this.maxParallelStoresRebalancing = props.getInt("max.parallel.stores.rebalancing", 3);
 
+        // FIX: need to use ThresholdFailureDetector, but blocked on issue 197.
         this.failureDetectorImplementation = props.getString("failuredetector.implementation",
                                                              BannagePeriodFailureDetector.class.getName());
 

@@ -9,9 +9,6 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * A thread-safe request counter that calculates throughput for a specified
  * duration of time on a sliding window basis.
- *
- * @author elias, gmj
- *
  */
 public class RequestCounter {
 

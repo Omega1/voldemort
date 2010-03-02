@@ -40,10 +40,6 @@ import voldemort.versioning.Versioned;
 
 /**
  * A simple non-persistent, in-memory store. Useful for unit testing.
- *
- * @author jay
- * @author dain
- *
  */
 public class InMemoryStorageEngine<K, V> implements StorageEngine<K, V> {
 
