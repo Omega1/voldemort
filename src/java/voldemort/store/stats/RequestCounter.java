@@ -72,21 +72,18 @@ public class RequestCounter {
         // the index into the arrays
         private final AtomicInteger index = new AtomicInteger(0);
 
-        private final long[] opSave;
-        private final long[] opTime;
+        // lazily created
+        private long[] opSave;
+        private long[] opTime;
 
         public Accumulator(long windowSizeMS, int maxOpsToTrack) {
             this.windowSizeMS = windowSizeMS;
             this.maxOpsToTrack = maxOpsToTrack;
-
-            opSave = new long[maxOpsToTrack];
-            opTime = new long[maxOpsToTrack];
-
-            Arrays.fill(opSave, -1);
-            Arrays.fill(opTime, -1);
         }
 
         public void addOperation(long timeNS) {
+            createArraysIfNecessary();
+
             int idx = index.incrementAndGet() % maxOpsToTrack;
             opSave[idx] = System.nanoTime();
             opTime[idx] = timeNS;
@@ -107,6 +104,11 @@ public class RequestCounter {
             long current = 0;
             long now = System.nanoTime();
 
+            if (opSave == null) {
+                // no ops
+                return max;
+            }
+
             for (long saveTimeInNS : opSave) {
                 if (saveTimeInNS == -1)
                     continue;
@@ -124,6 +126,10 @@ public class RequestCounter {
         }
 
         public long getTotalTimeNS() {
+            if (opSave == null || opTime == null) {
+                return 0;
+            }
+
             long totalTimeNS = 0;
             long now = System.nanoTime();
 
@@ -142,6 +148,10 @@ public class RequestCounter {
         }
 
         public long getCount() {
+            if (opSave == null) {
+                return 0;
+            }
+
             long count = 0;
             long now = System.nanoTime();
 
@@ -157,6 +167,18 @@ public class RequestCounter {
 
         public long getTotal() {
             return total.get();
+        }
+
+        private void createArraysIfNecessary() {
+            if (opSave == null) {
+                opSave = new long[maxOpsToTrack];
+                Arrays.fill(opSave, -1);
+            }
+
+            if (opTime == null) {
+                opTime = new long[maxOpsToTrack];
+                Arrays.fill(opTime, -1);
+            }
         }
     }
 
