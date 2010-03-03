@@ -135,7 +135,12 @@ public class StorageService extends AbstractService {
                                                                                                 .setStoreVerifier(new ServerStoreVerifier(storeRepository,
                                                                                                                                           voldemortConfig.getNodeId()));
         this.failureDetector = create(failureDetectorConfig, config.isJmxEnabled());
-        this.storeStats = new StoreStats();
+        if(voldemortConfig.isStatTrackingEnabled()) {
+            this.storeStats = new StoreStats();
+        }
+        else {
+            storeStats = null;
+        }
     }
 
     private void initStorageConfig(String configClassName) {
