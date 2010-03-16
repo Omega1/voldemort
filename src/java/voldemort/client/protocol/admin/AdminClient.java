@@ -41,6 +41,7 @@ import voldemort.client.protocol.pb.VProto;
 import voldemort.client.rebalance.RebalancePartitionsInfo;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.Node;
+import voldemort.cluster.failuredetector.FailureDetector;
 import voldemort.routing.RoutingStrategy;
 import voldemort.routing.RoutingStrategyFactory;
 import voldemort.server.protocol.admin.AsyncOperationStatus;
@@ -96,6 +97,7 @@ public class AdminClient {
     private static final long INITIAL_DELAY = 250; // Initial delay
     private static final long MAX_DELAY = 1000 * 60;
     private final AdminClientConfig adminClientConfig;
+    private final FailureDetector failureDetector;
 
     private Cluster currentCluster;
 
@@ -113,13 +115,14 @@ public class AdminClient {
      *        <li>socket buffer size</li>
      *        </ul>
      */
-    public AdminClient(String bootstrapURL, AdminClientConfig adminClientConfig) {
+    public AdminClient(String bootstrapURL, AdminClientConfig adminClientConfig, FailureDetector failureDetector) {
         this.currentCluster = getClusterFromBootstrapURL(bootstrapURL);
         this.errorMapper = new ErrorCodeMapper();
         this.pool = createSocketPool(adminClientConfig);
         this.networkClassLoader = new NetworkClassLoader(Thread.currentThread()
                                                                .getContextClassLoader());
         this.adminClientConfig = adminClientConfig;
+        this.failureDetector = failureDetector;
     }
 
     /**
@@ -143,6 +146,7 @@ public class AdminClient {
         this.networkClassLoader = new NetworkClassLoader(Thread.currentThread()
                                                                .getContextClassLoader());
         this.adminClientConfig = adminClientConfig;
+        this.failureDetector = null;
     }
 
     private Cluster getClusterFromBootstrapURL(String bootstrapURL) {
@@ -1115,6 +1119,10 @@ public class AdminClient {
         Set<ByteArray> keys = new HashSet<ByteArray>();
 
         for (Node node : currentCluster.getNodes()) {
+            if (failureDetector != null && !failureDetector.isAvailable(node)) {
+                logger.warn("Node " + node.getId() + " is unavailable, not retrieving keys from it for getAllKeys operation");
+                continue;
+            }
             VAdminProto.AllKeysResponse.Builder response = sendAndReceive(node.getId(),
                                                                            request,
                                                                            VAdminProto.AllKeysResponse.newBuilder());

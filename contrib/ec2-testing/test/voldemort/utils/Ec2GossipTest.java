@@ -139,7 +139,7 @@ public class Ec2GossipTest {
              */
             for (String hostname: newHostnames) {
                 int nodeId = nodeIds.get(hostname);
-                AdminClient adminClient = new AdminClient("tcp://" + hostname + ":6666", new AdminClientConfig());
+                AdminClient adminClient = new AdminClient("tcp://" + hostname + ":6666", new AdminClientConfig(), null);
 
                 Versioned<String> versioned = adminClient.getRemoteMetadata(nodeId, MetadataStore.CLUSTER_KEY);
                 Version version = versioned.getVersion();
@@ -161,7 +161,8 @@ public class Ec2GossipTest {
             assertWithBackoff(1000, 60000, new Attempt() {
                 private int count = 1;
                 private AdminClient adminClient = new AdminClient("tcp://" + hostNames.get(0) + ":6666",
-                                                      new AdminClientConfig());
+                                                      new AdminClientConfig(),
+                                                      null);
                 
                 public void checkCondition() throws Exception, AssertionError {
                     logger.info("Attempt " + count++);

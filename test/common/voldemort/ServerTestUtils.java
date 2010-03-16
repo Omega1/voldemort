@@ -403,7 +403,7 @@ public class ServerTestUtils {
 
     public static AdminClient getAdminClient(String bootstrapURL) {
         AdminClientConfig config = new AdminClientConfig();
-        return new AdminClient(bootstrapURL, config);
+        return new AdminClient(bootstrapURL, config, null);
     }
 
     public static RequestHandlerFactory getSocketRequestHandlerFactory(StoreRepository repository) {
