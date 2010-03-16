@@ -183,7 +183,7 @@ public abstract class AbstractFailureDetector implements FailureDetector {
 
         if(logger.isEnabledFor(Level.WARN)) {
             if(e != null)
-                logger.warn(node + " set as unavailable", e);
+                logger.warn(node + " set as unavailable: " + e.getMessage());
             else
                 logger.warn(node + " set as unavailable");
         }
