@@ -31,14 +31,16 @@ public class SocketService extends AbstractSocketService {
     private final SocketServer server;
 
     public SocketService(RequestHandlerFactory requestHandlerFactory,
+                         String host,
                          int port,
                          int coreConnections,
                          int maxConnections,
                          int socketBufferSize,
                          String serviceName,
                          boolean enableJmx) {
-        super(ServiceType.SOCKET, port, serviceName, enableJmx);
-        this.server = new SocketServer(port,
+        super(ServiceType.SOCKET, host, port, serviceName, enableJmx);
+        this.server = new SocketServer(host,
+                                       port,
                                        coreConnections,
                                        maxConnections,
                                        socketBufferSize,

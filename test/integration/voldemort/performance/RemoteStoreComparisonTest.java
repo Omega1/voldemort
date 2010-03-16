@@ -153,6 +153,7 @@ public class RemoteStoreComparisonTest {
                                                   repository,
                                                   RequestFormatType.VOLDEMORT_V0,
                                                   numThreads,
+                                                  "localhost",
                                                   8080);
         httpService.start();
         HttpClient httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());

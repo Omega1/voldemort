@@ -125,6 +125,7 @@ public class VoldemortServer extends AbstractService {
                                          storeRepository,
                                          RequestFormatType.VOLDEMORT_V1,
                                          voldemortConfig.getMaxThreads(),
+                                         identityNode.getHost(),
                                          identityNode.getHttpPort()));
         if(voldemortConfig.isSocketServerEnabled()) {
             RequestHandlerFactory socketRequestHandlerFactory = new SocketRequestHandlerFactory(storageService,
@@ -137,6 +138,7 @@ public class VoldemortServer extends AbstractService {
             if(voldemortConfig.getUseNioConnector()) {
                 logger.info("Using NIO Connector.");
                 services.add(new NioSocketService(socketRequestHandlerFactory,
+                                                  identityNode.getHost(),
                                                   identityNode.getSocketPort(),
                                                   voldemortConfig.getSocketBufferSize(),
                                                   voldemortConfig.getNioConnectorSelectors(),
@@ -145,6 +147,7 @@ public class VoldemortServer extends AbstractService {
             } else {
                 logger.info("Using BIO Connector.");
                 services.add(new SocketService(socketRequestHandlerFactory,
+                                               identityNode.getHost(),
                                                identityNode.getSocketPort(),
                                                voldemortConfig.getCoreThreads(),
                                                voldemortConfig.getMaxThreads(),
@@ -175,6 +178,7 @@ public class VoldemortServer extends AbstractService {
             if(voldemortConfig.getUseNioConnector()) {
                 logger.info("Using NIO Connector for Admin Service.");
                 services.add(new NioSocketService(adminRequestHandlerFactory,
+                                                  identityNode.getHost(),
                                                   identityNode.getAdminPort(),
                                                   voldemortConfig.getAdminSocketBufferSize(),
                                                   voldemortConfig.getNioAdminConnectorSelectors(),
@@ -183,6 +187,7 @@ public class VoldemortServer extends AbstractService {
             } else {
                 logger.info("Using BIO Connector for Admin Service.");
                 services.add(new SocketService(adminRequestHandlerFactory,
+                                               identityNode.getHost(),
                                                identityNode.getAdminPort(),
                                                voldemortConfig.getAdminCoreThreads(),
                                                voldemortConfig.getAdminMaxThreads(),

@@ -6,6 +6,7 @@ import voldemort.server.protocol.RequestHandlerFactory;
 public class AdminService extends SocketService {
 
     public AdminService(RequestHandlerFactory requestHandlerFactory,
+                        String host,
                         int port,
                         int coreConnections,
                         int maxConnections,
@@ -13,6 +14,7 @@ public class AdminService extends SocketService {
                         String serviceName,
                         boolean enableJmx) {
         super(requestHandlerFactory,
+              host,
               port,
               coreConnections,
               maxConnections,

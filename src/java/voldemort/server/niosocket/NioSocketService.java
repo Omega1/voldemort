@@ -78,12 +78,13 @@ public class NioSocketService extends AbstractSocketService {
     private final Logger logger = Logger.getLogger(getClass());
 
     public NioSocketService(RequestHandlerFactory requestHandlerFactory,
+                            String host,
                             int port,
                             int socketBufferSize,
                             int selectors,
                             String serviceName,
                             boolean enableJmx) {
-        super(ServiceType.SOCKET, port, serviceName, enableJmx);
+        super(ServiceType.SOCKET, host, port, serviceName, enableJmx);
         this.requestHandlerFactory = requestHandlerFactory;
         this.socketBufferSize = socketBufferSize;
 
@@ -93,7 +94,7 @@ public class NioSocketService extends AbstractSocketService {
             throw new VoldemortException(e);
         }
 
-        this.endpoint = new InetSocketAddress(port);
+        this.endpoint = new InetSocketAddress(host, port);
 
         this.selectorManagers = new SelectorManager[selectors];
         this.selectorManagerThreadPool = Executors.newFixedThreadPool(selectorManagers.length,
@@ -110,8 +111,8 @@ public class NioSocketService extends AbstractSocketService {
     @Override
     protected void startInner() {
         if(logger.isEnabledFor(Level.INFO))
-            logger.info("Starting Voldemort NIO socket server (" + serviceName + ") on port "
-                        + port);
+            logger.info("Starting Voldemort NIO socket server (" + serviceName + ") on host:port " +
+                        host + ":" + port);
 
         try {
             for(int i = 0; i < selectorManagers.length; i++) {
@@ -136,8 +137,8 @@ public class NioSocketService extends AbstractSocketService {
     @Override
     protected void stopInner() {
         if(logger.isEnabledFor(Level.INFO))
-            logger.info("Stopping Voldemort NIO socket server (" + serviceName + ") on port "
-                        + port);
+            logger.info("Stopping Voldemort NIO socket server (" + serviceName + ") on host:port "
+                        + host + ":" + port);
 
         try {
             // Signal the thread to stop accepting new connections...
@@ -215,7 +216,7 @@ public class NioSocketService extends AbstractSocketService {
 
         public void run() {
             if(logger.isInfoEnabled())
-                logger.info("Server now listening for connections on port " + port);
+                logger.info("Server now listening for connections on host:port " + host + ":" + port);
 
             AtomicInteger counter = new AtomicInteger();
 
@@ -253,7 +254,7 @@ public class NioSocketService extends AbstractSocketService {
             }
 
             if(logger.isInfoEnabled())
-                logger.info("Server has stopped listening for connections on port " + port);
+                logger.info("Server has stopped listening for connections on host:port " + host + ":" + port);
         }
 
     }

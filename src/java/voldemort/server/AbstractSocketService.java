@@ -29,17 +29,32 @@ import voldemort.utils.JmxUtils;
 @JmxManaged(description = "A server that handles remote operations on stores via TCP/IP.")
 public abstract class AbstractSocketService extends AbstractService implements VoldemortService {
 
+    protected final String host;
+
     protected final int port;
 
     protected final String serviceName;
 
     protected final boolean enableJmx;
 
-    public AbstractSocketService(ServiceType type, int port, String serviceName, boolean enableJmx) {
+    public AbstractSocketService(ServiceType type, String host, int port, String serviceName, boolean enableJmx) {
         super(type);
+        this.host = host;
         this.port = port;
         this.serviceName = serviceName;
         this.enableJmx = enableJmx;
+    }
+
+    /**
+     * Simply retrieves the host on which this service is listening for incoming
+     * requests.
+     *
+     * @return the host string
+     */
+
+    @JmxGetter(name = "host", description = "The host on which the server is accepting connections.")
+    public String getHost() {
+        return host;
     }
 
     /**

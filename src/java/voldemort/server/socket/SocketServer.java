@@ -58,6 +58,7 @@ public class SocketServer extends Thread {
     private final BlockingQueue<Object> startedStatusQueue = new LinkedBlockingQueue<Object>();
 
     private final ThreadPoolExecutor threadPool;
+    private final String host;
     private final int port;
     private final ThreadGroup threadGroup;
     private final int socketBufferSize;
@@ -70,12 +71,14 @@ public class SocketServer extends Thread {
 
     private ServerSocket serverSocket = null;
 
-    public SocketServer(int port,
+    public SocketServer(String host,
+                        int port,
                         int defaultThreads,
                         int maxThreads,
                         int socketBufferSize,
                         RequestHandlerFactory handlerFactory,
                         String serverName) {
+        this.host = host;
         this.port = port;
         this.socketBufferSize = socketBufferSize;
         this.threadGroup = new ThreadGroup("voldemort-socket-server");
@@ -131,10 +134,10 @@ public class SocketServer extends Thread {
 
     @Override
     public void run() {
-        logger.info("Starting voldemort socket server (" + serverName + ") on port " + port);
+        logger.info("Starting voldemort socket server (" + serverName + ") on host:port " + host + ":" + port);
         try {
             serverSocket = new ServerSocket();
-            serverSocket.bind(new InetSocketAddress(port));
+            serverSocket.bind(new InetSocketAddress(host, port));
             serverSocket.setReceiveBufferSize(this.socketBufferSize);
             startedStatusQueue.put(SUCCESS);
             while(!isInterrupted() && !serverSocket.isClosed()) {
@@ -147,7 +150,7 @@ public class SocketServer extends Thread {
                                                                 sessionId));
             }
         } catch(BindException e) {
-            logger.error("Could not bind to port " + port + ".");
+            logger.error("Could not bind to host:port " + host + ":" + port + ".");
             startedStatusQueue.offer(e);
             throw new VoldemortException(e);
         } catch(SocketException e) {
@@ -226,6 +229,11 @@ public class SocketServer extends Thread {
                 logger.warn("Error while closing session socket: ", e);
             }
         }
+    }
+
+    @JmxGetter(name = "host", description = "The host on which the server accepts connections.")
+    public String getHost() {
+        return this.host;
     }
 
     @JmxGetter(name = "port", description = "The port on which the server accepts connections.")
