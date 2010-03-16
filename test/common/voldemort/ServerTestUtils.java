@@ -133,6 +133,7 @@ public class ServerTestUtils {
 
         if(useNio) {
             socketService = new NioSocketService(requestHandlerFactory,
+                                                 "localhost",
                                                  port,
                                                  bufferSize,
                                                  coreConnections,
@@ -140,6 +141,7 @@ public class ServerTestUtils {
                                                  false);
         } else {
             socketService = new SocketService(requestHandlerFactory,
+                                              "localhost",
                                               port,
                                               coreConnections,
                                               maxConnections,

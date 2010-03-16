@@ -50,6 +50,7 @@ public class HttpService extends AbstractService {
 
     private final Logger logger = Logger.getLogger(HttpService.class);
 
+    private final String host;
     private final int port;
     private final int numberOfThreads;
     private final VoldemortServer server;
@@ -64,8 +65,10 @@ public class HttpService extends AbstractService {
                        StoreRepository storeRepository,
                        RequestFormatType requestType,
                        int numberOfThreads,
+                       String host,
                        int httpPort) {
         super(ServiceType.HTTP);
+        this.host = host;
         this.port = httpPort;
         this.numberOfThreads = numberOfThreads;
         this.server = server;
@@ -83,6 +86,7 @@ public class HttpService extends AbstractService {
         try {
             Connector connector = new SelectChannelConnector();
             connector.setLowResourceMaxIdleTime(3000);
+            connector.setHost(this.host);
             connector.setPort(this.port);
             QueuedThreadPool threadPool = new QueuedThreadPool();
             threadPool.setName("VoldemortHttp");
@@ -107,7 +111,7 @@ public class HttpService extends AbstractService {
             this.context = context;
             this.httpServer = httpServer;
             this.httpServer.start();
-            logger.info("HTTP service started on port " + this.port);
+            logger.info("HTTP service started on host:port " + this.host + ":" + this.port);
         } catch(Exception e) {
             throw new VoldemortException(e);
         }
