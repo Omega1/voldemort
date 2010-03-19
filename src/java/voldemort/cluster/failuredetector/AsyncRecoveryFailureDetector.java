@@ -128,7 +128,7 @@ public class AsyncRecoveryFailureDetector extends AbstractFailureDetector implem
                     nodeRecovered(node);
                 } catch(UnreachableStoreException e) {
                     if(logger.isEnabledFor(Level.WARN))
-                        logger.warn("Node " + node.getId() + " still unavailable", e);
+                        logger.warn("Node " + node.getId() + " still unavailable: " + e.getMessage());
                 } catch(Exception e) {
                     if(logger.isEnabledFor(Level.ERROR))
                         logger.error("Node " + node.getId() + " unavailable due to error", e);
