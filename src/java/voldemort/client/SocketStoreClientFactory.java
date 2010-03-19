@@ -59,7 +59,8 @@ public class SocketStoreClientFactory extends AbstractStoreClientFactory {
         this.socketPool = new SocketPool(config.getMaxConnectionsPerNode(),
                                          config.getConnectionTimeout(TimeUnit.MILLISECONDS),
                                          config.getSocketTimeout(TimeUnit.MILLISECONDS),
-                                         config.getSocketBufferSize());
+                                         config.getSocketBufferSize(),
+                                         config.getSocketKeepAlive());
         if(config.isJmxEnabled())
             JmxUtils.registerMbean(socketPool, JmxUtils.createObjectName(SocketPool.class));
     }
@@ -97,12 +98,7 @@ public class SocketStoreClientFactory extends AbstractStoreClientFactory {
 
         };
 
-        ClientStoreVerifier<ByteArray, byte[]> storeVerifier = new ClientStoreVerifier<ByteArray, byte[]>() {
-
-            @Override
-            protected ByteArray getKey() {
-                return new ByteArray(MetadataStore.NODE_ID_KEY.getBytes());
-            }
+        ClientStoreVerifier storeVerifier = new ClientStoreVerifier() {
 
             @Override
             protected Store<ByteArray, byte[]> getStoreInternal(Node node) {
@@ -138,7 +134,7 @@ public class SocketStoreClientFactory extends AbstractStoreClientFactory {
     @Override
     public void close() {
         this.socketPool.close();
-        if (failureDetector != null)
+        if(failureDetector != null)
             this.failureDetector.removeFailureDetectorListener(failureDetectorListener);
         this.getThreadPool().shutdown();
 

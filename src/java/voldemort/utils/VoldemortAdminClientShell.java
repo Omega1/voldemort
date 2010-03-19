@@ -40,7 +40,7 @@ public class VoldemortAdminClientShell extends VoldemortClientShell {
 
         AdminClient adminClient = null;
         try {
-            adminClient = new AdminClient(bootstrapUrl, new AdminClientConfig(), null);
+            adminClient = new AdminClient(bootstrapUrl, new AdminClientConfig());
         } catch (Exception e) {
             Utils.croak("Couldn't instantiate admin client: " + e.getMessage());
         }

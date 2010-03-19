@@ -18,4 +18,4 @@
 
 base_dir=$(dirname $0)/..
 
-$base_dir/bin/run-class.sh voldemort.VoldemortClusterViewer $@
+$base_dir/bin/run-class.sh voldemort.VoldemortAdminTool $@

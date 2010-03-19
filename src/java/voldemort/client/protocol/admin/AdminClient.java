@@ -41,7 +41,6 @@ import voldemort.client.protocol.pb.VProto;
 import voldemort.client.rebalance.RebalancePartitionsInfo;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.Node;
-import voldemort.cluster.failuredetector.FailureDetector;
 import voldemort.routing.RoutingStrategy;
 import voldemort.routing.RoutingStrategyFactory;
 import voldemort.server.protocol.admin.AsyncOperationStatus;
@@ -97,13 +96,12 @@ public class AdminClient {
     private static final long INITIAL_DELAY = 250; // Initial delay
     private static final long MAX_DELAY = 1000 * 60;
     private final AdminClientConfig adminClientConfig;
-    private final FailureDetector failureDetector;
 
     private Cluster currentCluster;
 
     /**
-     * Create an instance of AdminClient given a URL of a node in the cluster. The
-     * bootstrap URL is used to get the cluster metadata.
+     * Create an instance of AdminClient given a URL of a node in the cluster.
+     * The bootstrap URL is used to get the cluster metadata.
      * 
      * @param bootstrapURL URL pointing to the bootstrap node
      * @param adminClientConfig Configuration for AdminClient specifying client
@@ -115,14 +113,13 @@ public class AdminClient {
      *        <li>socket buffer size</li>
      *        </ul>
      */
-    public AdminClient(String bootstrapURL, AdminClientConfig adminClientConfig, FailureDetector failureDetector) {
+    public AdminClient(String bootstrapURL, AdminClientConfig adminClientConfig) {
         this.currentCluster = getClusterFromBootstrapURL(bootstrapURL);
         this.errorMapper = new ErrorCodeMapper();
         this.pool = createSocketPool(adminClientConfig);
         this.networkClassLoader = new NetworkClassLoader(Thread.currentThread()
                                                                .getContextClassLoader());
         this.adminClientConfig = adminClientConfig;
-        this.failureDetector = failureDetector;
     }
 
     /**
@@ -146,7 +143,6 @@ public class AdminClient {
         this.networkClassLoader = new NetworkClassLoader(Thread.currentThread()
                                                                .getContextClassLoader());
         this.adminClientConfig = adminClientConfig;
-        this.failureDetector = null;
     }
 
     private Cluster getClusterFromBootstrapURL(String bootstrapURL) {
@@ -169,7 +165,8 @@ public class AdminClient {
         return new SocketPool(config.getMaxConnectionsPerNode(),
                               (int) unit.toMillis(config.getAdminConnectionTimeoutSec()),
                               (int) unit.toMillis(config.getAdminSocketTimeoutSec()),
-                              config.getAdminSocketBufferSize());
+                              config.getAdminSocketBufferSize(),
+                              config.getAdminSocketKeepAlive());
     }
 
     private <T extends Message.Builder> T sendAndReceive(int nodeId, Message message, T builder) {
@@ -1059,8 +1056,8 @@ public class AdminClient {
 
     /**
      * Retrieve the server
-     * {@link voldemort.store.metadata.MetadataStore.VoldemortState state} from a
-     * remote node.
+     * {@link voldemort.store.metadata.MetadataStore.VoldemortState state} from
+     * a remote node.
      */
     public Versioned<VoldemortState> getRemoteServerState(int nodeId) {
         Versioned<String> value = getRemoteMetadata(nodeId, MetadataStore.SERVER_STATE_KEY);
@@ -1070,8 +1067,8 @@ public class AdminClient {
 
     /**
      * Update the server
-     * {@link voldemort.store.metadata.MetadataStore.VoldemortState state}
-     * on a remote node.
+     * {@link voldemort.store.metadata.MetadataStore.VoldemortState state} on a
+     * remote node.
      */
     public void updateRemoteClusterState(int nodeId,
                                          MetadataStore.VoldemortState state,

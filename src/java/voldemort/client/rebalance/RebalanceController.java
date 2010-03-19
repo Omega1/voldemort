@@ -35,7 +35,7 @@ public class RebalanceController {
     RebalanceClientConfig rebalanceConfig;
 
     public RebalanceController(String bootstrapUrl, RebalanceClientConfig rebalanceConfig) {
-        this.adminClient = new AdminClient(bootstrapUrl, rebalanceConfig, null);
+        this.adminClient = new AdminClient(bootstrapUrl, rebalanceConfig);
         this.rebalanceConfig = rebalanceConfig;
     }
 

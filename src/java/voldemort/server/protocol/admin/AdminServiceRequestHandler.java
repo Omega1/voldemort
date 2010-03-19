@@ -79,7 +79,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
     private final StoreRepository storeRepository;
     private final NetworkClassLoader networkClassLoader;
     private final VoldemortConfig voldemortConfig;
-    private final AsyncOperationRunner asyncRunner;
+    private final AsyncOperationService asyncService;
     private final Rebalancer rebalancer;
 
     public AdminServiceRequestHandler(ErrorCodeMapper errorCodeMapper,
@@ -87,7 +87,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
                                       StoreRepository storeRepository,
                                       MetadataStore metadataStore,
                                       VoldemortConfig voldemortConfig,
-                                      AsyncOperationRunner asyncRunner,
+                                      AsyncOperationService asyncService,
                                       Rebalancer rebalancer) {
         this.errorCodeMapper = errorCodeMapper;
         this.storageService = storageService;
@@ -96,7 +96,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         this.voldemortConfig = voldemortConfig;
         this.networkClassLoader = new NetworkClassLoader(Thread.currentThread()
                                                                .getContextClassLoader());
-        this.asyncRunner = asyncRunner;
+        this.asyncService = asyncService;
         this.rebalancer = rebalancer;
     }
 
@@ -231,7 +231,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         VAdminProto.AsyncOperationListResponse.Builder response = VAdminProto.AsyncOperationListResponse.newBuilder();
         boolean showComplete = request.hasShowComplete() && request.getShowComplete();
         try {
-            response.addAllRequestIds(asyncRunner.getAsyncOperationList(showComplete));
+            response.addAllRequestIds(asyncService.getAsyncOperationList(showComplete));
         } catch(VoldemortException e) {
             response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
             logger.error("handleAsyncOperationList failed for request(" + request.toString() + ")",
@@ -245,7 +245,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         VAdminProto.AsyncOperationStopResponse.Builder response = VAdminProto.AsyncOperationStopResponse.newBuilder();
         int requestId = request.getRequestId();
         try {
-            asyncRunner.stopOperation(requestId);
+            asyncService.stopOperation(requestId);
         } catch(VoldemortException e) {
             response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
             logger.error("handleAsyncOperationStop failed for request(" + request.toString() + ")",
@@ -264,7 +264,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
                                                           : new DefaultVoldemortFilter();
         final String storeName = request.getStore();
 
-        int requestId = asyncRunner.getUniqueRequestId();
+        int requestId = asyncService.getUniqueRequestId();
         VAdminProto.AsyncOperationStatusResponse.Builder response = VAdminProto.AsyncOperationStatusResponse.newBuilder()
                                                                                                             .setRequestId(requestId)
                                                                                                             .setComplete(false)
@@ -272,7 +272,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
                                                                                                             .setStatus("started");
 
         try {
-            asyncRunner.submitOperation(requestId,
+            asyncService.submitOperation(requestId,
                                         new AsyncOperation(requestId, "Fetch and Update") {
 
                                             private final AtomicBoolean running = new AtomicBoolean(true);
@@ -334,8 +334,8 @@ public class AdminServiceRequestHandler implements RequestHandler {
         VAdminProto.AsyncOperationStatusResponse.Builder response = VAdminProto.AsyncOperationStatusResponse.newBuilder();
         try {
             int requestId = request.getRequestId();
-            AsyncOperationStatus operationStatus = asyncRunner.getOperationStatus(requestId);
-            boolean requestComplete = asyncRunner.isComplete(requestId);
+            AsyncOperationStatus operationStatus = asyncService.getOperationStatus(requestId);
+            boolean requestComplete = asyncService.isComplete(requestId);
             response.setDescription(operationStatus.getDescription());
             response.setComplete(requestComplete);
             response.setStatus(operationStatus.getStatus());
@@ -471,13 +471,14 @@ public class AdminServiceRequestHandler implements RequestHandler {
             return response.build();
         }
 
-        // only allow a single store to be created at a time. We'll see concurrent errors when writing the
-        // stores.xml file out otherwise. (see ConfigurationStorageEngine.put for details)
-        synchronized(lock) {
-            try {
-                // adding a store requires decoding the passed in store string
-                StoreDefinitionsMapper mapper = new StoreDefinitionsMapper();
-                StoreDefinition def = mapper.readStore(new StringReader(request.getStoreDefinition()));
+        try {
+            // adding a store requires decoding the passed in store string
+            StoreDefinitionsMapper mapper = new StoreDefinitionsMapper();
+            StoreDefinition def = mapper.readStore(new StringReader(request.getStoreDefinition()));
+
+            synchronized(lock) {
+                // only allow a single store to be created at a time. We'll see concurrent errors when writing the
+                // stores.xml file out otherwise. (see ConfigurationStorageEngine.put for details)
 
                 if(!storeRepository.hasLocalStore(def.getName())) {
                     // open the store
@@ -502,14 +503,13 @@ public class AdminServiceRequestHandler implements RequestHandler {
                     throw new StoreOperationFailureException(String.format("Store '%s' already exists on this server",
                                                                            def.getName()));
                 }
-
-            } catch(VoldemortException e) {
-                response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
-                logger.error("handleAddStore failed for request(" + request.toString() + ")", e);
             }
-
-            return response.build();
+        } catch(VoldemortException e) {
+            response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
+            logger.error("handleAddStore failed for request(" + request.toString() + ")", e);
         }
+
+        return response.build();
     }
 
     public VAdminProto.AllKeysResponse handleAllKeys(VAdminProto.AllKeysRequest request) {
@@ -526,10 +526,11 @@ public class AdminServiceRequestHandler implements RequestHandler {
         }
         catch(VoldemortException e) {
             response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
-            logger.error("handleAddStore failed for request(" + request.toString() + ")", e);
+            logger.error("handleAddKeys failed for request(" + request.toString() + ")", e);
         }
 
         return response.build();
+
     }
 
     /**

@@ -1,6 +1,23 @@
+/*
+ * Copyright 2008-2010 LinkedIn, Inc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 package voldemort.server.protocol.admin;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -16,16 +33,16 @@ import voldemort.utils.SystemTime;
  */
 public class AsyncOperationTest extends TestCase {
 
-    public void testAsyncOperationRunner() throws Exception {
+    public void testAsyncOperationService() throws Exception {
         SchedulerService schedulerService = new SchedulerService(2, SystemTime.INSTANCE);
-        AsyncOperationRunner asyncOperationRunner = new AsyncOperationRunner(schedulerService, 10);
+        AsyncOperationService asyncOperationService = new AsyncOperationService(schedulerService, 10);
 
         final AtomicBoolean completedOp0 = new AtomicBoolean(false);
         final AtomicBoolean completedOp1 = new AtomicBoolean(false);
         final CountDownLatch latch = new CountDownLatch(1);
 
-        int opId0 = asyncOperationRunner.getUniqueRequestId();
-        asyncOperationRunner.submitOperation(opId0,
+        int opId0 = asyncOperationService.getUniqueRequestId();
+        asyncOperationService.submitOperation(opId0,
                                              new AsyncOperation(opId0, "op0") {
                                                  @Override
                                                  public void operate() throws Exception {
@@ -39,8 +56,8 @@ public class AsyncOperationTest extends TestCase {
                                                  }
                                              });
 
-        int opId1 = asyncOperationRunner.getUniqueRequestId();
-        asyncOperationRunner.submitOperation(opId1,
+        int opId1 = asyncOperationService.getUniqueRequestId();
+        asyncOperationService.submitOperation(opId1,
                                              new AsyncOperation(opId1, "op1") {
                                                  @Override
                                                  public void operate() throws Exception {
@@ -54,10 +71,10 @@ public class AsyncOperationTest extends TestCase {
                                                  }
                                              });
         latch.await();
-        List<Integer> opList = asyncOperationRunner.getAsyncOperationList(false);
+        List<Integer> opList = asyncOperationService.getAsyncOperationList(false);
         assertFalse("doesn't list completed operations", opList.contains(1));
         assertTrue("lists a pending operation", opList.contains(0));
-        opList = asyncOperationRunner.getAsyncOperationList(true);
+        opList = asyncOperationService.getAsyncOperationList(true);
         assertTrue("lists all operations", opList.containsAll(Arrays.asList(0,1)));
 
         Thread.sleep(1000);
@@ -67,9 +84,9 @@ public class AsyncOperationTest extends TestCase {
     }
 
     @SuppressWarnings("unchecked")
-    public void testAsyncOperationRepository() {
-        Map<String, AsyncOperation> operations = new AsyncOperationRepository(2);
-
+    public void testAsyncOperationCache() {
+        Map<Integer, AsyncOperation> operations = Collections.synchronizedMap(new AsyncOperationCache(2));
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
         AsyncOperation completeLater = new AsyncOperation(0, "test") {
 
             @Override
@@ -78,7 +95,8 @@ public class AsyncOperationTest extends TestCase {
             @Override
             public void operate() {
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(1500);
+                    countDownLatch.countDown();
                 } catch(InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -87,7 +105,7 @@ public class AsyncOperationTest extends TestCase {
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
 
-        AsyncOperation completeNow = new AsyncOperation(1, "test 2") {
+        AsyncOperation completeNow = new AsyncOperation(1, "test") {
             @Override
             public void stop() {}
 
@@ -95,7 +113,7 @@ public class AsyncOperationTest extends TestCase {
             public void operate() {}
         };
 
-        AsyncOperation completeSoon = new AsyncOperation(2, "test3") {
+        AsyncOperation completeSoon = new AsyncOperation(2, "test") {
             @Override
             public void stop() {}
             @Override
@@ -108,32 +126,34 @@ public class AsyncOperationTest extends TestCase {
             }
         };
 
+        operations.put(0, completeLater);
+        operations.put(1, completeNow);
+        operations.put(2, completeSoon);
+
         executorService.submit(completeLater);
         executorService.submit(completeNow);
         executorService.submit(completeSoon);
-
-        operations.put("foo1", completeLater);
-        operations.put("foo2", completeNow);
-        operations.put("foo3", completeSoon);
-        operations.put("foo4", completeLater);
-        operations.put("foo5", completeLater);
-
-        assertTrue("Handles overflow okay", operations.containsKey("foo4"));
-
+ 
+        assertTrue("Handles overflow okay", operations.containsKey(0) &&
+                                            operations.containsKey(1) &&
+                                            operations.containsKey(2));
+        
         try {
-            Thread.sleep(1000);
+            countDownLatch.await();
         } catch(InterruptedException e) {
             Thread.currentThread().interrupt();
         }
 
-        operations.put("foo5", completeLater);
-
-        assertTrue(operations.containsKey("foo5"));
-
-        for (int i = 0; i < 10; i++) { 
-            operations.put("foo" + 5 + i, completeLater);
+        for (int i=3; i < 32; i++) {
+            AsyncOperation asyncOperation = new AsyncOperation(i, "test") {
+                @Override
+                public void stop() {}
+                @Override
+                public void operate() {}
+            };
+            operations.put(i, asyncOperation);
         }
 
-        assertFalse("Actually does LRU heuristics", operations.containsKey("foo2"));
+        assertFalse("Actually does LRU heuristics", operations.containsKey(0));
     }
 }
