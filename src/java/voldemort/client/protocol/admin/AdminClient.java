@@ -1104,12 +1104,13 @@ public class AdminClient {
     }
 
     /**
-     * Returns a set of all keys for a store from all active nodes in the cluster.
+     * Returns a set of all keys for a store on a node
      *
+     * @param nodeId the id of the node to get all keys from
      * @param storeName the name of the store to retrieve all keys from
-     * @return a set of all keys for a store from all active nodes in the cluster.
+     * @return a set of all keys for a store on a node
      */
-    public Set<ByteArray> getAllKeys(String storeName) {
+    public Set<ByteArray> getAllKeys(int nodeId, String storeName) {
         VAdminProto.AllKeysRequest.Builder allKeysRequest = VAdminProto.AllKeysRequest.newBuilder().setStore(storeName);
 
         VAdminProto.VoldemortAdminRequest request = VAdminProto.VoldemortAdminRequest.newBuilder()
@@ -1117,21 +1118,14 @@ public class AdminClient {
                                                                                          .setAllKeys(allKeysRequest)
                                                                                          .build();
         Set<ByteArray> keys = new HashSet<ByteArray>();
+        VAdminProto.AllKeysResponse.Builder response = sendAndReceive(nodeId,
+                                                                       request,
+                                                                       VAdminProto.AllKeysResponse.newBuilder());
+        if(response.hasError())
+            throwException(response.getError());
 
-        for (Node node : currentCluster.getNodes()) {
-            if (failureDetector != null && !failureDetector.isAvailable(node)) {
-                logger.warn("Node " + node.getId() + " is unavailable, not retrieving keys from it for getAllKeys operation");
-                continue;
-            }
-            VAdminProto.AllKeysResponse.Builder response = sendAndReceive(node.getId(),
-                                                                           request,
-                                                                           VAdminProto.AllKeysResponse.newBuilder());
-            if(response.hasError())
-                throwException(response.getError());
-
-            for (int i = 0; i< response.getKeyCount(); i++) {
-                keys.add(ProtoUtils.decodeBytes(response.getKey(i)));
-            }
+        for (int i = 0; i< response.getKeyCount(); i++) {
+            keys.add(ProtoUtils.decodeBytes(response.getKey(i)));
         }
 
         return keys;
