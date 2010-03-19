@@ -153,6 +153,7 @@ public class AdminClient {
         ClientConfig config = new ClientConfig();
         // try to bootstrap metadata from bootstrapUrl
         config.setBootstrapUrls(bootstrapURL);
+        config.setEnableJmx(false);
         SocketStoreClientFactory factory = new SocketStoreClientFactory(config);
         // get Cluster from bootStrapUrl
         String clusterXml = factory.bootstrapMetadataWithRetries(MetadataStore.CLUSTER_KEY,

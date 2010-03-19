@@ -137,7 +137,12 @@ public class StorageService extends AbstractService {
                                                                                                                                           metadata,
                                                                                                                                           config));
         this.failureDetector = create(failureDetectorConfig, config.isJmxEnabled());
-        this.storeStats = new StoreStats();
+        if(voldemortConfig.isStatTrackingEnabled()) {
+            this.storeStats = new StoreStats();
+        }
+        else {
+            storeStats = null;
+        }
     }
 
     private void initStorageConfig(String configClassName) {

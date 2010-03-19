@@ -6,8 +6,6 @@ import java.util.Map;
 
 /**
  * Some convenient statistics to track about the store
- * 
- * 
  */
 public class StoreStats {
 
@@ -26,7 +24,8 @@ public class StoreStats {
         counters = new EnumMap<Tracked, RequestCounter>(Tracked.class);
 
         for(Tracked tracked: Tracked.values()) {
-            counters.put(tracked, new RequestCounter(300000));
+            // sliding window of 30 seconds, tracking up to a max of 5000 ops
+            counters.put(tracked, new RequestCounter(30000, 5000));
         }
         this.parent = parent;
     }
@@ -44,7 +43,7 @@ public class StoreStats {
     }
 
     public void recordTime(Tracked op, long timeNS) {
-        counters.get(op).addRequest(timeNS);
+        counters.get(op).addOperation(timeNS);
         if(parent != null)
             parent.recordTime(op, timeNS);
     }

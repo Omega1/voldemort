@@ -1,43 +1,40 @@
 package voldemort.store.stats;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import voldemort.utils.Time;
+
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A thread-safe request counter that calculates throughput for a specified
- * duration of time.
- * 
- * 
+ * duration of time on a sliding window basis.
  */
 public class RequestCounter {
 
-    private final AtomicReference<Accumulator> values;
-    private final int durationMS;
+    private final Accumulator accumulator;
 
     /**
-     * @param durationMS specifies for how long you want to maintain this
-     *        counter (in milliseconds).
+     * @param windowSizeMS specifies the duration of the sliding window (in milliseconds).
+     * @param maxOpsToTrack the maximum operations to track
      */
-    public RequestCounter(int durationMS) {
-        this.values = new AtomicReference<Accumulator>(new Accumulator());
-        this.durationMS = durationMS;
+    public RequestCounter(int windowSizeMS, int maxOpsToTrack) {
+        this.accumulator = new Accumulator(windowSizeMS, maxOpsToTrack);
     }
 
     public long getCount() {
-        return getValidAccumulator().count;
+        return accumulator.getCount();
     }
 
     public long getTotalCount() {
-        return getValidAccumulator().total;
+        return accumulator.getTotal();
     }
 
     public float getThroughput() {
-        Accumulator oldv = getValidAccumulator();
-        double elapsed = (System.currentTimeMillis() - oldv.startTimeMS)
+        double elapsed = (System.currentTimeMillis() - accumulator.getStartTimeMS())
                          / (double) Time.MS_PER_SECOND;
         if(elapsed > 0f) {
-            return (float) (oldv.count / elapsed);
+            return (float) (accumulator.getCount() / elapsed);
         } else {
             return -1f;
         }
@@ -48,91 +45,140 @@ public class RequestCounter {
     }
 
     public double getAverageTimeInMs() {
-        return getValidAccumulator().getAverageTimeNS() / Time.NS_PER_MS;
+        return accumulator.getAverageTimeNS() / Time.NS_PER_MS;
     }
 
     public String getDisplayAverageTimeInMs() {
         return String.format("%.4f", getAverageTimeInMs());
     }
 
-    public int getDuration() {
-        return durationMS;
-    }
-
-    private Accumulator getValidAccumulator() {
-
-        Accumulator accum = values.get();
-        long now = System.currentTimeMillis();
-
-        /*
-         * if still in the window, just return it
-         */
-        if(now - accum.startTimeMS <= durationMS) {
-            return accum;
-        }
-
-        /*
-         * try to set. if we fail, then someone else set it, so just return that
-         * new one
-         */
-
-        Accumulator newWithTotal = accum.newWithTotal();
-
-        if(values.compareAndSet(accum, newWithTotal)) {
-            return newWithTotal;
-        }
-
-        return values.get();
-    }
-
     /*
-     * Updates the stats accumulator with another operation. We need to make
-     * sure that the request is only added to a non-expired pair. If so, start a
-     * new counter pair with recent time. We'll only try to do this 3 times - if
-     * other threads keep modifying while we're doing our own work, just bail.
-     * 
+     * Updates the stats accumulator with another operation.
+     *
      * @param timeNS time of operation, in nanoseconds
      */
-    public void addRequest(long timeNS) {
-
-        for(int i = 0; i < 3; i++) {
-            Accumulator oldv = getValidAccumulator();
-
-            long startTimeMS = oldv.startTimeMS;
-            long count = oldv.count + 1;
-            long totalTimeNS = oldv.totalTimeNS + timeNS;
-            long total = oldv.total + 1;
-
-            if(values.compareAndSet(oldv, new Accumulator(startTimeMS, count, totalTimeNS, total))) {
-                return;
-            }
-        }
+    public void addOperation(long timeNS) {
+        accumulator.addOperation(timeNS);
     }
 
     private static class Accumulator {
 
-        final long startTimeMS;
-        final long count;
-        final long totalTimeNS;
-        final long total;
+        private final AtomicLong total = new AtomicLong(0);
 
-        public Accumulator() {
-            this(System.currentTimeMillis(), 0, 0, 0);
+
+        private final long windowSizeMS;
+        private final int maxOpsToTrack;
+
+        // the index into the arrays
+        private final AtomicInteger index = new AtomicInteger(0);
+
+        // lazily created
+        private long[] opSave;
+        private long[] opTime;
+
+        public Accumulator(long windowSizeMS, int maxOpsToTrack) {
+            this.windowSizeMS = windowSizeMS;
+            this.maxOpsToTrack = maxOpsToTrack;
         }
 
-        public Accumulator newWithTotal() {
-            return new Accumulator(System.currentTimeMillis(), 0, 0, total);
-        }
+        public void addOperation(long timeNS) {
+            createArraysIfNecessary();
 
-        public Accumulator(long startTimeMS, long count, long totalTimeNS, long total) {
-            this.startTimeMS = startTimeMS;
-            this.count = count;
-            this.totalTimeNS = totalTimeNS;
-            this.total = total;
+            int idx = index.incrementAndGet() % maxOpsToTrack;
+            opSave[idx] = System.nanoTime();
+            opTime[idx] = timeNS;
+            total.incrementAndGet();
         }
 
         public double getAverageTimeNS() {
-            return count > 0 ? 1f * totalTimeNS / count : -0f;
+            long count = getCount();
+            return count > 0 ? 1f * getTotalTimeNS() / count : -0f;
+        }
+
+        public long getStartTimeMS() {
+            // Under heavy load the arrays may not have anything in them
+            // near the max time. If that's the case return the oldest
+            // time in the array
+            long start = System.currentTimeMillis();
+            long max = start - windowSizeMS;
+            long current = 0;
+            long now = System.nanoTime();
+
+            if (opSave == null) {
+                // no ops
+                return max;
+            }
+
+            for (long saveTimeInNS : opSave) {
+                if (saveTimeInNS == -1)
+                    continue;
+
+                long saveTimeInMS = (now - saveTimeInNS) / Time.NS_PER_MS;
+                if (saveTimeInMS > current)
+                    current = saveTimeInMS;
+
+                if (current > max) {
+                    return max;
+                }
+            }
+
+            return current == 0 ? max : start - current;
+        }
+
+        public long getTotalTimeNS() {
+            if (opSave == null || opTime == null) {
+                return 0;
+            }
+
+            long totalTimeNS = 0;
+            long now = System.nanoTime();
+
+            for (int i = 0; i < opSave.length; i++) {
+                long saveTimeInNS = opSave[i];
+                // check to see if the op is in the window
+                if (saveTimeInNS != -1 && now - saveTimeInNS <= windowSizeMS * Time.NS_PER_MS) {
+                    long opTimeInNS = opTime[i];
+                    if (opTimeInNS != -1) {
+                        totalTimeNS += opTimeInNS;
+                    }
+                }
+            }
+
+            return totalTimeNS;
+        }
+
+        public long getCount() {
+            if (opSave == null) {
+                return 0;
+            }
+
+            long count = 0;
+            long now = System.nanoTime();
+
+            for (long saveTimeInNS : opSave) {
+                // check to see if the op is in the window
+                if (saveTimeInNS != -1 && now - saveTimeInNS <= windowSizeMS * Time.NS_PER_MS) {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        public long getTotal() {
+            return total.get();
+        }
+
+        private void createArraysIfNecessary() {
+            if (opSave == null) {
+                opSave = new long[maxOpsToTrack];
+                Arrays.fill(opSave, -1);
+            }
+
+            if (opTime == null) {
+                opTime = new long[maxOpsToTrack];
+                Arrays.fill(opTime, -1);
+            }
         }
     }
 }
