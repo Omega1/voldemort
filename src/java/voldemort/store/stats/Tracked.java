@@ -5,6 +5,7 @@ public enum Tracked {
     GET_ALL("getAll"),
     PUT("put"),
     DELETE("delete"),
+    DELETE_ALL("deleteAll"),
     EXCEPTION("exception"),
     OBSOLETE("obsolete");
 

@@ -17,6 +17,7 @@
 package voldemort.store.logging;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -24,6 +25,7 @@ import voldemort.VoldemortException;
 import voldemort.store.DelegatingStore;
 import voldemort.store.Store;
 import voldemort.store.StoreCapabilityType;
+import voldemort.store.StoreUtils;
 import voldemort.utils.SystemTime;
 import voldemort.utils.Time;
 import voldemort.versioning.Version;
@@ -93,6 +95,27 @@ public class LoggingStore<K, V> extends DelegatingStore<K, V> {
         } finally {
             printTimedMessage("DELETE", succeeded, startTimeNs);
         }
+    }
+
+    @Override
+    public boolean deleteAll(Map<K, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        long startTimeNs = 0;
+        boolean deletedSomething = false;
+        boolean succeeded = false;
+        if(logger.isDebugEnabled())
+            startTimeNs = time.getNanoseconds();
+
+        try {
+            for (Map.Entry<K, Version> entry : keys.entrySet()) {
+                deletedSomething |= getInnerStore().delete(entry.getKey(), entry.getValue());
+                succeeded = true;
+            }
+        } finally {
+            printTimedMessage("DELETEALL", succeeded, startTimeNs);
+        }
+        
+        return deletedSomething;
     }
 
     @Override

@@ -29,6 +29,11 @@ message KeyedVersions {
   repeated Versioned versions = 2;
 }
 
+message KeyedVersion {
+  required bytes key = 1;
+  required VectorClock version = 2;
+}
+
 message GetRequest {
   optional bytes key = 1;
 }
@@ -71,12 +76,22 @@ message DeleteResponse {
   optional Error error = 2;
 }
 
+message DeleteAllRequest {
+  repeated KeyedVersion delete = 1;
+}
+
+message DeleteAllResponse {
+  required bool success = 1;
+  optional Error error = 2;
+}
+
 enum RequestType {
   GET = 0;
   GET_ALL = 1;
   PUT = 2;
   DELETE = 3;
   GET_VERSION = 4;
+  DELETE_ALL = 5;
 }
 
 
@@ -89,4 +104,5 @@ message VoldemortRequest {
   optional PutRequest put = 6;
   optional DeleteRequest delete = 7;
   optional int32 requestRouteType = 8;
+  optional DeleteAllRequest deleteAll = 9;
 }

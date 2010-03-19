@@ -49,6 +49,11 @@ public class DelegatingStore<K, V> implements Store<K, V> {
         return innerStore.delete(key, version);
     }
 
+    public boolean deleteAll(Map<K, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        return innerStore.deleteAll(keys);
+    }
+
     public Map<K, List<Versioned<V>>> getAll(Iterable<K> keys) throws VoldemortException {
         StoreUtils.assertValidKeys(keys);
         return innerStore.getAll(keys);

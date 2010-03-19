@@ -329,7 +329,11 @@ public class MetadataStore implements StorageEngine<ByteArray, byte[]> {
     }
 
     public boolean delete(ByteArray key, Version version) throws VoldemortException {
-        throw new VoldemortException("You cannot delete your metadata fool !!");
+        throw new VoldemortException("You cannot delete your metadata !!");
+    }
+
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        throw new VoldemortException("You cannot delete your metadata !!");
     }
 
     public Map<ByteArray, List<Versioned<byte[]>>> getAll(Iterable<ByteArray> keys)

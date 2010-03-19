@@ -76,6 +76,14 @@ public interface Store<K, V> {
     public boolean delete(K key, Version version) throws VoldemortException;
 
     /**
+     * Delete all entries for each key prior to the provided version
+     *
+     * @param keys the keys to delete
+     * @return true if anything was deleted
+     */
+    public boolean deleteAll(Map<K, Version> keys) throws VoldemortException;
+
+    /**
      * @return The name of the store.
      */
     public String getName();

@@ -99,6 +99,49 @@ public class InMemoryStorageEngine<K, V> implements StorageEngine<K, V> {
         }
     }
 
+    public boolean deleteAll(Map<K, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        boolean deletedSomething = false;
+        for (Entry<K, Version> entry : keys.entrySet()) {
+            K key = entry.getKey();
+            Version version = entry.getValue();
+
+            if (key == null) {
+                continue;
+            }
+
+            if (version == null) {
+                return map.remove(key) != null;
+            }
+
+            List<Versioned<V>> items = map.get(key);
+            if (items == null) {
+                return false;
+            }
+
+            synchronized (items) {
+                Iterator<Versioned<V>> iterator = items.iterator();
+                while (iterator.hasNext()) {
+                    Versioned<V> item = iterator.next();
+                    if (item.getVersion().compare(version) == Occured.BEFORE) {
+                        iterator.remove();
+                        deletedSomething = true;
+                    }
+                }
+                if (items.size() == 0) {
+                    // If this remove fails, then another delete operation got
+                    // there before this one
+                    if (!map.remove(key, items)) {
+                        continue;
+                    }
+                }
+
+            }
+        }
+
+        return deletedSomething;
+    }
+
     public List<Version> getVersions(K key) {
         return StoreUtils.getVersions(get(key));
     }

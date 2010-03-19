@@ -356,7 +356,7 @@ public class ServerTestUtils {
                                                      Properties properties) throws IOException {
         Props props = new Props(properties);
         props.put("node.id", nodeId);
-        props.put("voldemort.home", baseDir + "/node-" + nodeId);
+        props.put("voldemort.home", baseDir +  + File.separatorChar + "node-" + nodeId);
         props.put("bdb.cache.size", 1 * 1024 * 1024);
         props.put("bdb.write.transactions", "true");
         props.put("bdb.flush.transactions", "true");

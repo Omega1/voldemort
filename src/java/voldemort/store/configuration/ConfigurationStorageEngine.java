@@ -84,6 +84,15 @@ public class ConfigurationStorageEngine implements StorageEngine<String, String>
         return false;
     }
 
+    public boolean deleteAll(Map<String, Version> keys) throws VoldemortException {
+        boolean deletedSomething = false;
+        for (Map.Entry<String, Version> entry : keys.entrySet()) {
+            deletedSomething |= delete(entry.getKey(), entry.getValue());
+        }
+
+        return deletedSomething;
+    }
+
     public synchronized List<Versioned<String>> get(String key) throws VoldemortException {
         StoreUtils.assertValidKey(key);
         return get(key, getDirectory(key).listFiles());

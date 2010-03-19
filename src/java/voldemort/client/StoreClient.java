@@ -153,6 +153,15 @@ public interface StoreClient<K, V> {
     public boolean delete(K key);
 
     /**
+     * For each key in the provided set delete any version which equal to or less than the
+     * current version of the key
+     *
+     * @param keys An iterable of keys to delete
+     * @return true if anything is deleted
+     */
+    public boolean deleteAll(Iterable<K> keys);
+
+    /**
      * Delete the specified version and any prior versions of the given key
      * 
      * @param key The key to delete

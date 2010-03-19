@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
@@ -72,6 +73,9 @@ public class VoldemortNativeRequestHandler extends AbstractRequestHandler implem
                     break;
                 case VoldemortOpCode.GET_VERSION_OP_CODE:
                     handleGetVersion(inputStream, outputStream, store);
+                    break;
+                case VoldemortOpCode.DELETE_ALL_OP_CODE:
+                    handleDeleteAll(inputStream, outputStream, store);
                     break;
                 default:
                     throw new IOException("Unknown op code: " + opCode);
@@ -180,6 +184,19 @@ public class VoldemortNativeRequestHandler extends AbstractRequestHandler implem
                     // Here we skip over the data (without reading it in) and
                     // move our position to just past it.
                     buffer.position(newPosition);
+                    break;
+                }
+                case VoldemortOpCode.DELETE_ALL_OP_CODE: {
+                    numKeys = inputStream.readInt();
+
+                    // Read the keys to skip the bytes.
+                    for(int i = 0; i < numKeys; i++) {
+                        int keySize = inputStream.readInt();
+                        buffer.position(buffer.position() + keySize);
+                        short clockSize = inputStream.readShort();
+                        buffer.position(buffer.position() + clockSize);
+                    }
+
                     break;
                 }
                 default:
@@ -293,6 +310,30 @@ public class VoldemortNativeRequestHandler extends AbstractRequestHandler implem
         VectorClock version = new VectorClock(versionBytes);
         try {
             boolean succeeded = store.delete(key, version);
+            outputStream.writeShort(0);
+            outputStream.writeBoolean(succeeded);
+        } catch(VoldemortException e) {
+            writeException(outputStream, e);
+        }
+    }
+
+    private void handleDeleteAll(DataInputStream inputStream,
+                                  DataOutputStream outputStream,
+                                  Store<ByteArray, byte[]> store) throws IOException {
+
+        int numKeys = inputStream.readInt();
+        Map<ByteArray, Version> keys = Maps.newHashMap();
+        for (int i = 0; i < numKeys; i++) {
+            ByteArray key = readKey(inputStream);
+            int versionSize = inputStream.readShort();
+            byte[] versionBytes = new byte[versionSize];
+            ByteUtils.read(inputStream, versionBytes);
+            VectorClock version = new VectorClock(versionBytes);
+            keys.put(key, version);
+        }
+
+        try {
+            boolean succeeded = store.deleteAll(keys);
             outputStream.writeShort(0);
             outputStream.writeBoolean(succeeded);
         } catch(VoldemortException e) {

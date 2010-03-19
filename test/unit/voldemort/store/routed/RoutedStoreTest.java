@@ -224,6 +224,13 @@ public class RoutedStoreTest extends AbstractByteArrayStoreTest {
         assertTrue(routedStore.delete(aKey, versioned.getVersion()));
         assertNEqual(routedStore, 0, aKey, versioned);
         assertTrue(!routedStore.delete(aKey, versioned.getVersion()));
+
+        routedStore.put(aKey, versioned);
+        Map<ByteArray, Version> keys = Maps.newHashMap();
+        keys.put(aKey, versioned.getVersion());
+        assertTrue(routedStore.deleteAll(keys));
+        assertNEqual(routedStore, 0, aKey, versioned);
+        assertTrue(!routedStore.deleteAll(keys));
     }
 
     @Test
@@ -267,7 +274,16 @@ public class RoutedStoreTest extends AbstractByteArrayStoreTest {
         }
         try {
             routedStore.delete(aKey, versioned.getVersion());
-            fail("Get succeeded with too few operational nodes.");
+            fail("Delete succeeded with too few operational nodes.");
+        } catch(InsufficientOperationalNodesException e) {
+            // expected
+        }
+
+        try {
+            Map<ByteArray, Version> keys = Maps.newHashMap();
+            keys.put(aKey, versioned.getVersion());
+            routedStore.deleteAll(keys);
+            fail("DeleteAll succeeded with too few operational nodes.");
         } catch(InsufficientOperationalNodesException e) {
             // expected
         }

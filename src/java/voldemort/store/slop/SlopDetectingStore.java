@@ -18,7 +18,10 @@ package voldemort.store.slop;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import voldemort.VoldemortException;
 import voldemort.cluster.Node;
 import voldemort.routing.RoutingStrategy;
@@ -79,6 +82,45 @@ public class SlopDetectingStore extends DelegatingStore<ByteArray, byte[]> {
             slopStore.put(slop.makeKey(), new Versioned<Slop>(slop, version));
             return false;
         }
+    }
+
+    @Override
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        List<ByteArray> localKeys = Lists.newArrayList();
+        List<ByteArray> nonLocalKeys = Lists.newArrayList();
+
+        for (ByteArray key : localKeys) {
+            if (isLocal(key)) {
+                localKeys.add(key);
+            }
+            else {
+                nonLocalKeys.add(key);
+            }
+        }
+
+        Map<ByteArray, Version> local = Maps.newHashMap();
+        for (ByteArray key : localKeys) {
+            local.put(key, keys.get(key));
+        }
+
+        boolean deletedSomething = getInnerStore().deleteAll(local);
+
+        if (nonLocalKeys.isEmpty()) {
+            return deletedSomething;
+        }
+
+        for (ByteArray key : nonLocalKeys) {
+            Slop slop = new Slop(getName(),
+                                 Slop.Operation.DELETE,
+                                 key,
+                                 null,
+                                 localNode.getId(),
+                                 new Date());
+            slopStore.put(slop.makeKey(), new Versioned<Slop>(slop, keys.get(key)));
+
+        }
+
+        return false;
     }
 
     @Override

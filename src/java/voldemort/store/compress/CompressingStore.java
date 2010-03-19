@@ -154,4 +154,13 @@ public class CompressingStore implements Store<ByteArray, byte[]> {
         StoreUtils.assertValidKey(key);
         return innerStore.delete(deflateKey(key), version);
     }
+
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        boolean deletedSomething = false;
+        for (Map.Entry<ByteArray, Version> entry : keys.entrySet()) {
+            deletedSomething |= innerStore.delete(deflateKey(entry.getKey()), entry.getValue()); 
+        }
+        return deletedSomething;
+    }
 }

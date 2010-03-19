@@ -43,6 +43,16 @@ public class SleepyStore<K, V> extends DelegatingStore<K, V> {
     }
 
     @Override
+    public boolean deleteAll(Map<K, Version> keys) throws VoldemortException {
+        try {
+            Thread.sleep(sleepTimeMs);
+            return getInnerStore().deleteAll(keys);
+        } catch(InterruptedException e) {
+            throw new VoldemortException(e);
+        }
+    }
+
+    @Override
     public List<Versioned<V>> get(K key) throws VoldemortException {
         try {
             Thread.sleep(sleepTimeMs);

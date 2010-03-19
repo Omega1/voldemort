@@ -17,6 +17,7 @@
 package voldemort.store.invalidmetadata;
 
 import java.util.List;
+import java.util.Map;
 
 import voldemort.VoldemortException;
 import voldemort.store.DelegatingStore;
@@ -66,6 +67,18 @@ public class InvalidMetadataCheckingStore extends DelegatingStore<ByteArray, byt
                                        metadata.getCluster().getNodeById(nodeId));
 
         return getInnerStore().delete(key, version);
+    }
+
+    @Override
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        for (ByteArray key : keys.keySet()) {
+            StoreUtils.assertValidMetadata(key,
+                                       metadata.getRoutingStrategy(getName()),
+                                       metadata.getCluster().getNodeById(nodeId));
+        }
+
+        return getInnerStore().deleteAll(keys);
     }
 
     @Override

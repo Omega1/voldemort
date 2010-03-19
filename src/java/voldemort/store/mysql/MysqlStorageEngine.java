@@ -188,6 +188,47 @@ public class MysqlStorageEngine implements StorageEngine<ByteArray, byte[]> {
         }
     }
 
+    public boolean deleteAll(Map<ByteArray, Version> keys) throws VoldemortException {
+        StoreUtils.assertValidKeys(keys == null ? null : keys.keySet());
+        boolean deletedSomething = false;
+        Connection conn = null;
+        PreparedStatement selectStmt = null;
+
+        try {
+            conn = datasource.getConnection();
+            String select = "select key_, version_ from " + name + " where key_ = ? for update";
+            selectStmt = conn.prepareStatement(select);
+            for (Map.Entry<ByteArray, Version> entry : keys.entrySet()) {
+                ResultSet rs = null;
+
+                try {
+                    selectStmt.setBytes(1, entry.getKey().get());
+                    rs = selectStmt.executeQuery();
+
+                    while(rs.next()) {
+                        byte[] theKey = rs.getBytes("key_");
+                        byte[] version = rs.getBytes("version_");
+                        if(new VectorClock(version).compare(entry.getValue()) == Occured.BEFORE) {
+                            delete(conn, theKey, version);
+                            deletedSomething = true;
+                        }
+                    }
+                } finally {
+                    tryClose(rs);
+                }
+            }
+        }
+        catch(SQLException e) {
+            throw new PersistenceFailureException("Fix me!", e);
+        }
+        finally {
+            tryClose(selectStmt);
+            tryClose(conn);
+        }
+
+        return deletedSomething;
+    }
+
     private void delete(Connection connection, byte[] key, byte[] version) throws SQLException {
         String delete = "delete from " + name + " where key_ = ? and version_ = ?";
         PreparedStatement deleteStmt = null;
