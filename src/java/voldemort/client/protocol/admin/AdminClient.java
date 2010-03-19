@@ -1082,26 +1082,25 @@ public class AdminClient {
     }
 
     /**
-     * Add a new store definition to all active nodes in the cluster.
-     * 
+     * Add a new store definition to the specified node
+     *
+     * @param nodeId the id of the node to add the store definition to
      * @param def the definition of the store to add
      */
-    public void addStore(StoreDefinition def) {
+    public void addStore(int nodeId, StoreDefinition def) {
         String value = storeMapper.writeStore(def);
 
         VAdminProto.AddStoreRequest.Builder addStoreRequest = VAdminProto.AddStoreRequest.newBuilder()
                                                                                          .setStoreDefinition(value);
         VAdminProto.VoldemortAdminRequest request = VAdminProto.VoldemortAdminRequest.newBuilder()
-                                                                                     .setType(VAdminProto.AdminRequestType.ADD_STORE)
-                                                                                     .setAddStore(addStoreRequest)
-                                                                                     .build();
-        for(Node node: currentCluster.getNodes()) {
-            VAdminProto.AddStoreResponse.Builder response = sendAndReceive(node.getId(),
-                                                                           request,
-                                                                           VAdminProto.AddStoreResponse.newBuilder());
-            if(response.hasError())
-                throwException(response.getError());
-        }
+                                                                                         .setType(VAdminProto.AdminRequestType.ADD_STORE)
+                                                                                         .setAddStore(addStoreRequest)
+                                                                                         .build();
+        VAdminProto.AddStoreResponse.Builder response = sendAndReceive(nodeId,
+                                                                       request,
+                                                                       VAdminProto.AddStoreResponse.newBuilder());
+        if(response.hasError())
+            throwException(response.getError());
     }
 
     /**

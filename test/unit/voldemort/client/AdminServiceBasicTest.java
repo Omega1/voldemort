@@ -184,7 +184,7 @@ public class AdminServiceBasicTest extends TestCase {
                                                                  .setPreferredWrites(1)
                                                                  .setRequiredWrites(1)
                                                                  .build();
-        adminClient.addStore(definition);
+        adminClient.addStore(0, definition);
 
         // now test the store
         StoreClientFactory factory = new SocketStoreClientFactory(new ClientConfig().setBootstrapUrls(cluster.getNodeById(0)
