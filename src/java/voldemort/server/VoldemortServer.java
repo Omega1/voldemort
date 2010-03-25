@@ -175,7 +175,7 @@ public class VoldemortServer extends AbstractService {
                                                                                                      this.asyncService,
                                                                                                      rebalancer);
 
-            if(voldemortConfig.getUseNioConnector()) {
+            if(voldemortConfig.getUseNioAdminConnector()) {
                 logger.info("Using NIO Connector for Admin Service.");
                 services.add(new NioSocketService(adminRequestHandlerFactory,
                                                   identityNode.getHost(),

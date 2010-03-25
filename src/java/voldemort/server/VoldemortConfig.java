@@ -92,6 +92,7 @@ public class VoldemortConfig implements Serializable {
     private boolean socketKeepAlive;
 
     private boolean useNioConnector;
+    private boolean useNioAdminConnector;
     private int nioConnectorSelectors;
     private int nioAdminConnectorSelectors;
 
@@ -235,6 +236,7 @@ public class VoldemortConfig implements Serializable {
         this.socketKeepAlive = props.getBoolean("socket.keepalive", false);
 
         this.useNioConnector = props.getBoolean("enable.nio.connector", false);
+        this.useNioAdminConnector = props.getBoolean("enable.nio.admin.connector", false);
         this.nioConnectorSelectors = props.getInt("nio.connector.selectors",
                                                   Math.max(8, Runtime.getRuntime()
                                                                      .availableProcessors()));
@@ -915,6 +917,14 @@ public class VoldemortConfig implements Serializable {
 
     public void setUseNioConnector(boolean useNio) {
         this.useNioConnector = useNio;
+    }
+
+    public boolean getUseNioAdminConnector() {
+        return useNioAdminConnector;
+    }
+
+    public void setUseNioAdminConnector(boolean useNioAdminConnector) {
+        this.useNioAdminConnector = useNioAdminConnector;
     }
 
     public int getNioConnectorSelectors() {
