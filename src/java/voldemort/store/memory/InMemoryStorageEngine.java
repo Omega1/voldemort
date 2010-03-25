@@ -26,6 +26,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import voldemort.VoldemortException;
 import voldemort.annotations.concurrency.NotThreadsafe;
+import voldemort.annotations.jmx.JmxGetter;
+import voldemort.annotations.jmx.JmxManaged;
 import voldemort.store.NoSuchCapabilityException;
 import voldemort.store.StorageEngine;
 import voldemort.store.StoreCapabilityType;
@@ -41,6 +43,7 @@ import voldemort.versioning.Versioned;
 /**
  * A simple non-persistent, in-memory store. Useful for unit testing.
  */
+@JmxManaged
 public class InMemoryStorageEngine<K, V> implements StorageEngine<K, V> {
 
     private final ConcurrentMap<K, List<Versioned<V>>> map;
@@ -56,6 +59,11 @@ public class InMemoryStorageEngine<K, V> implements StorageEngine<K, V> {
         this.map = Utils.notNull(map);
     }
 
+    @JmxGetter(name = "size", description = "The number of objects stored.")
+    public long size() {
+        return map.size();
+    }
+    
     public void close() {}
 
     public void deleteAll() {
