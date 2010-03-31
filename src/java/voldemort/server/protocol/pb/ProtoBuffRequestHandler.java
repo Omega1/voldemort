@@ -167,10 +167,16 @@ public class ProtoBuffRequestHandler extends AbstractRequestHandler {
         VProto.DeleteAllResponse.Builder response = VProto.DeleteAllResponse.newBuilder();
         try {
             Map<ByteArray, Version> keys = Maps.newHashMap();
-            for (VProto.KeyedVersion keyedVersion : request.getDeleteList()) {
-                keys.put(ProtoUtils.decodeBytes(keyedVersion.getKey()), ProtoUtils.decodeClock(keyedVersion.getVersion()));
+            if (request.hasExpression()) {
+                String el = request.getExpression();
+                response.setSuccess(store.deleteAll(el));
             }
-            response.setSuccess(store.deleteAll(keys));
+            else {
+                for (VProto.KeyedVersion keyedVersion : request.getDeleteList()) {
+                    keys.put(ProtoUtils.decodeBytes(keyedVersion.getKey()), ProtoUtils.decodeClock(keyedVersion.getVersion()));
+                }
+                response.setSuccess(store.deleteAll(keys));
+            }
         } catch(VoldemortException e) {
             response.setError(ProtoUtils.encodeError(getErrorMapper(), e));
         }

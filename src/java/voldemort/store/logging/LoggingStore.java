@@ -119,6 +119,24 @@ public class LoggingStore<K, V> extends DelegatingStore<K, V> {
     }
 
     @Override
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        long startTimeNs = 0;
+        boolean deletedSomething = false;
+        boolean succeeded = false;
+        if(logger.isDebugEnabled())
+            startTimeNs = time.getNanoseconds();
+
+        try {
+            deletedSomething = getInnerStore().deleteAll(elExpression);
+            succeeded = true;
+        } finally {
+            printTimedMessage("DELETEALL", succeeded, startTimeNs);
+        }
+
+        return deletedSomething;
+    }
+
+    @Override
     public List<Versioned<V>> get(K key) throws VoldemortException {
         long startTimeNs = 0;
         boolean succeeded = false;

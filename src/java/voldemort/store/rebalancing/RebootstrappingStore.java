@@ -141,6 +141,19 @@ public class RebootstrappingStore extends DelegatingStore<ByteArray, byte[]> {
     }
 
     @Override
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        for(int attempts = 0; attempts < this.maxMetadataRefreshAttempts; attempts++) {
+            try {
+                return super.deleteAll(elExpression);
+            } catch(InvalidMetadataException e) {
+                reinit();
+            }
+        }
+        throw new VoldemortException(this.maxMetadataRefreshAttempts
+                                     + " metadata refresh attempts failed for server side routing.");
+    }
+
+    @Override
     public List<Version> getVersions(ByteArray key) {
         for(int attempts = 0; attempts < this.maxMetadataRefreshAttempts; attempts++) {
             try {

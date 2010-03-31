@@ -59,9 +59,22 @@ public class StatTrackingStore<K, V> extends DelegatingStore<K, V> {
 
     @Override
     public boolean deleteAll(Map<K, Version> keys) throws VoldemortException {
-         long start = System.nanoTime();
+        long start = System.nanoTime();
         try {
             return super.deleteAll(keys);
+        } catch(VoldemortException e) {
+            stats.recordTime(Tracked.EXCEPTION, System.nanoTime() - start);
+            throw e;
+        } finally {
+            stats.recordTime(Tracked.DELETE_ALL, System.nanoTime() - start);
+        }
+    }
+
+    @Override
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        long start = System.nanoTime();
+        try {
+            return super.deleteAll(elExpression);
         } catch(VoldemortException e) {
             stats.recordTime(Tracked.EXCEPTION, System.nanoTime() - start);
             throw e;

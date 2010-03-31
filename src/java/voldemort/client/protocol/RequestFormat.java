@@ -81,5 +81,10 @@ public interface RequestFormat {
                                    Map<ByteArray, VectorClock> keys,
                                    RequestRoutingType routingType) throws IOException;
 
+    public void writeDeleteAllRequest(DataOutputStream output,
+                                   String storeName,
+                                   String elExpression,
+                                   RequestRoutingType routingType) throws IOException;
+
     public boolean readDeleteAllResponse(DataInputStream input) throws IOException;
 }

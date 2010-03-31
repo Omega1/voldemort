@@ -104,6 +104,23 @@ public class ProtoBuffClientRequestFormat implements RequestFormat {
                                                        .build());
     }
 
+    public void writeDeleteAllRequest(DataOutputStream output,
+                                      String storeName,
+                                      String elExpression,
+                                      RequestRoutingType routingType) throws IOException {
+        VProto.DeleteAllRequest.Builder req = VProto.DeleteAllRequest.newBuilder();
+        req.setExpression(elExpression);
+
+        ProtoUtils.writeMessage(output,
+                                VProto.VoldemortRequest.newBuilder()
+                                                       .setType(RequestType.DELETE_ALL)
+                                                       .setStore(storeName)
+                                                       .setShouldRoute(routingType.equals(RequestRoutingType.ROUTED))
+                                                       .setRequestRouteType(routingType.getRoutingTypeCode())
+                                                       .setDeleteAll(req)
+                                                       .build());
+    }
+
     public boolean readDeleteAllResponse(DataInputStream input) throws IOException {
         VProto.DeleteAllResponse.Builder response = ProtoUtils.readToBuilder(input,
                                                                    VProto.DeleteAllResponse.newBuilder());

@@ -60,6 +60,10 @@ public class DoNothingStore<K, V> implements Store<K, V> {
         return true;
     }
 
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        return true;
+    }
+
     public void put(K key, Versioned<V> value) throws VoldemortException {
     // Do nothing
     }

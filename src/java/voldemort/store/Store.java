@@ -84,6 +84,15 @@ public interface Store<K, V> {
     public boolean deleteAll(Map<K, Version> keys) throws VoldemortException;
 
     /**
+     * Delete all entries for which the provided elExpression returns true
+     *
+     * @param elExpression an el expression which must evaluate to either true or false using the current el expression parser
+     * @return true if anything was deleted
+     * @throws ExpressionEvaluationUnsupportedException if el expression evaluation is not possible for this store
+     */
+    public boolean deleteAll(String elExpression) throws VoldemortException;
+
+    /**
      * @return The name of the store.
      */
     public String getName();

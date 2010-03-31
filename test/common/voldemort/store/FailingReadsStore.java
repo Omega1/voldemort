@@ -1,12 +1,12 @@
 package voldemort.store;
 
-import java.util.List;
-import java.util.Map;
-
 import voldemort.VoldemortException;
 import voldemort.store.memory.InMemoryStorageEngine;
 import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
+
+import java.util.List;
+import java.util.Map;
 
 public class FailingReadsStore<K, V> implements Store<K, V> {
 
@@ -26,6 +26,10 @@ public class FailingReadsStore<K, V> implements Store<K, V> {
 
     public boolean deleteAll(Map<K, Version> keys) throws VoldemortException {
         return engine.deleteAll(keys);
+    }
+
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        return engine.deleteAll(elExpression);
     }
 
     public List<Versioned<V>> get(K key) throws VoldemortException {

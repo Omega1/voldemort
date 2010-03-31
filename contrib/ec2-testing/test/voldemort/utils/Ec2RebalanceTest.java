@@ -171,8 +171,7 @@ public class Ec2RebalanceTest extends AbstractRebalanceTest {
         populateData(currentCluster, Arrays.asList(0));
 
         AdminClient adminClient = new AdminClient(getBootstrapUrl(currentCluster, 0),
-                                                  new AdminClientConfig(),
-                                                  null);
+                                                  new AdminClientConfig());
         RebalancePartitionsInfo rebalancePartitionsInfo = new RebalancePartitionsInfo(1,
                                                                                       0,
                                                                                       Arrays.asList(2,
@@ -193,7 +192,7 @@ public class Ec2RebalanceTest extends AbstractRebalanceTest {
         startClusterNode(hostName, ec2RebalanceTestConfig, 1);
 
         adminClient.stop();
-        adminClient = new AdminClient(getBootstrapUrl(currentCluster, 0), new AdminClientConfig(), null);
+        adminClient = new AdminClient(getBootstrapUrl(currentCluster, 0), new AdminClientConfig());
         Versioned<MetadataStore.VoldemortState> serverState = adminClient.getRemoteServerState(1);
 
         int delay = 250;

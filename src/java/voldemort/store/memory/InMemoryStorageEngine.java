@@ -28,17 +28,14 @@ import voldemort.VoldemortException;
 import voldemort.annotations.concurrency.NotThreadsafe;
 import voldemort.annotations.jmx.JmxGetter;
 import voldemort.annotations.jmx.JmxManaged;
-import voldemort.store.NoSuchCapabilityException;
-import voldemort.store.StorageEngine;
-import voldemort.store.StoreCapabilityType;
-import voldemort.store.StoreUtils;
-import voldemort.utils.ClosableIterator;
-import voldemort.utils.Pair;
-import voldemort.utils.Utils;
+import voldemort.serialization.Serializer;
+import voldemort.store.*;
+import voldemort.utils.*;
 import voldemort.versioning.ObsoleteVersionException;
 import voldemort.versioning.Occured;
 import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
+import voldemort.xml.StoreDefinitionsMapper;
 
 /**
  * A simple non-persistent, in-memory store. Useful for unit testing.
@@ -48,6 +45,7 @@ public class InMemoryStorageEngine<K, V> implements StorageEngine<K, V> {
 
     private final ConcurrentMap<K, List<Versioned<V>>> map;
     private final String name;
+    private Serializer keySerializer;
 
     public InMemoryStorageEngine(String name) {
         this.name = Utils.notNull(name);
@@ -57,6 +55,14 @@ public class InMemoryStorageEngine<K, V> implements StorageEngine<K, V> {
     public InMemoryStorageEngine(String name, ConcurrentMap<K, List<Versioned<V>>> map) {
         this.name = Utils.notNull(name);
         this.map = Utils.notNull(map);
+    }
+
+    public Serializer getKeySerializer() {
+        return keySerializer;
+    }
+
+    public void setKeySerializer(Serializer keySerializer) {
+        this.keySerializer = keySerializer;
     }
 
     @JmxGetter(name = "size", description = "The number of objects stored.")
@@ -149,6 +155,26 @@ public class InMemoryStorageEngine<K, V> implements StorageEngine<K, V> {
 
         return deletedSomething;
     }
+
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        ClosableIterator<K> iter = keys();
+        Serializer s = getKeySerializer();
+        if (keySerializer == null) {
+            throw new ExpressionEvaluationUnsupportedException("This store currently does not support el expression evaluation");
+        }
+        
+        boolean deletedSomething = false;
+        while (iter.hasNext()) {
+            K key = iter.next();
+            if (ExpressionUtil.evaluatesToTrue(elExpression, s.toObject(((ByteArray) key).get()).toString())) {
+                delete(key);
+                deletedSomething = true;
+            }
+        }
+
+        return deletedSomething;
+    }
+
 
     public List<Version> getVersions(K key) {
         return StoreUtils.getVersions(get(key));

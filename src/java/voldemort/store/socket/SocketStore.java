@@ -124,6 +124,24 @@ public class SocketStore implements Store<ByteArray, byte[]> {
         }
     }
 
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        SocketAndStreams sands = pool.checkout(destination);
+        try {
+            requestFormat.writeDeleteAllRequest(sands.getOutputStream(),
+                                             name,
+                                             elExpression,
+                                             requestType);
+            sands.getOutputStream().flush();
+            return requestFormat.readDeleteAllResponse(sands.getInputStream());
+        } catch(IOException e) {
+            close(sands.getSocket());
+            throw new UnreachableStoreException("Failure in deleteAll on " + destination + ": "
+                                                + e.getMessage(), e);
+        } finally {
+            pool.checkin(destination, sands);
+        }
+    }
+
     public Map<ByteArray, List<Versioned<byte[]>>> getAll(Iterable<ByteArray> keys)
             throws VoldemortException {
         StoreUtils.assertValidKeys(keys);

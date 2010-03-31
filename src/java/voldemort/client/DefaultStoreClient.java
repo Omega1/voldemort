@@ -16,6 +16,7 @@
 
 package voldemort.client;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,12 +35,7 @@ import voldemort.store.InvalidMetadataException;
 import voldemort.store.Store;
 import voldemort.store.StoreCapabilityType;
 import voldemort.utils.Utils;
-import voldemort.versioning.InconsistencyResolver;
-import voldemort.versioning.InconsistentDataException;
-import voldemort.versioning.ObsoleteVersionException;
-import voldemort.versioning.VectorClock;
-import voldemort.versioning.Version;
-import voldemort.versioning.Versioned;
+import voldemort.versioning.*;
 
 import com.google.common.collect.Maps;
 
@@ -111,6 +107,19 @@ public class DefaultStoreClient<K, V> implements StoreClient<K, V> {
         }
         throw new VoldemortException(this.metadataRefreshAttempts
                                      + " metadata refresh attempts failed.");
+    }
+
+    public boolean deleteAll(String elExpression) {
+        for(int attempts = 0;; attempts++) {
+            if(attempts >= this.metadataRefreshAttempts)
+                throw new VoldemortException(this.metadataRefreshAttempts
+                                             + " metadata refresh attempts failed.");
+            try {
+                return store.deleteAll(elExpression);
+            } catch(InvalidMetadataException e) {
+                bootStrap();
+            }
+        }
     }
 
     public boolean delete(K key, Version version) {

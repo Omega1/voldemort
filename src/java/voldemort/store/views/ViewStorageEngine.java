@@ -64,6 +64,10 @@ public class ViewStorageEngine implements StorageEngine<ByteArray, byte[]> {
         return target.deleteAll(keys);
     }
 
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        return target.deleteAll(elExpression);
+    }
+
     public List<Versioned<byte[]>> get(ByteArray key) throws VoldemortException {
         List<Versioned<byte[]>> values = target.get(key);
         for(Versioned<byte[]> v: values)

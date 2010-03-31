@@ -94,6 +94,10 @@ public class NoopStorageEngine implements StorageEngine<ByteArray, byte[]> {
         return true;
     }
 
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        return true;
+    }
+
     public String getName() {
         return name;
     }

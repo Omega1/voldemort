@@ -28,11 +28,7 @@ import javax.sql.DataSource;
 import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
-import voldemort.store.NoSuchCapabilityException;
-import voldemort.store.PersistenceFailureException;
-import voldemort.store.StorageEngine;
-import voldemort.store.StoreCapabilityType;
-import voldemort.store.StoreUtils;
+import voldemort.store.*;
 import voldemort.utils.ByteArray;
 import voldemort.utils.ClosableIterator;
 import voldemort.utils.Pair;
@@ -227,6 +223,10 @@ public class MysqlStorageEngine implements StorageEngine<ByteArray, byte[]> {
         }
 
         return deletedSomething;
+    }
+
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        throw new ExpressionEvaluationUnsupportedException("This store currently does not support el expression evaluation");
     }
 
     private void delete(Connection connection, byte[] key, byte[] version) throws SQLException {

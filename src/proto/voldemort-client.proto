@@ -78,6 +78,7 @@ message DeleteResponse {
 
 message DeleteAllRequest {
   repeated KeyedVersion delete = 1;
+  optional string expression = 2;
 }
 
 message DeleteAllResponse {

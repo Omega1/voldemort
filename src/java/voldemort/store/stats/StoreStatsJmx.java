@@ -109,10 +109,10 @@ public class StoreStatsJmx {
         double sum = 0.0;
         double weightedTime = 0.0;
         for(Tracked stat: ImmutableList.of(Tracked.DELETE,
+                                           Tracked.DELETE_ALL,
                                            Tracked.GET,
                                            Tracked.GET_ALL,
-                                           Tracked.PUT,
-                                           Tracked.DELETE_ALL)) {
+                                           Tracked.PUT)) {
             sum += stats.getCount(stat);
             weightedTime += stats.getCount(stat) * stats.getAvgTimeInMs(stat);
         }

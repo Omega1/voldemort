@@ -73,6 +73,10 @@ public class SerializingStore<K, V> implements Store<K, V> {
         return store.deleteAll(serializedMap);
     }
 
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        return store.deleteAll(elExpression);
+    }
+
     private ByteArray keyToBytes(K key) {
         return new ByteArray(keySerializer.toBytes(key));
     }

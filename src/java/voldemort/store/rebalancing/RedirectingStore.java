@@ -163,6 +163,11 @@ public class RedirectingStore extends DelegatingStore<ByteArray, byte[]> {
         return getInnerStore().deleteAll(keys);
     }
 
+    @Override
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        return getInnerStore().deleteAll(elExpression);
+    }
+
     protected boolean checkKeyBelongsToStolenPartitions(ByteArray key) {
         for(int partitionId: metadata.getRoutingStrategy(getName()).getPartitionList(key.get())) {
             if(metadata.getRebalancingStealInfo().getPartitionList().contains(partitionId)) {

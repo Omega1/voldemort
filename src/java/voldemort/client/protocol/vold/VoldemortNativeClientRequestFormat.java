@@ -95,6 +95,23 @@ public class VoldemortNativeClientRequestFormat implements RequestFormat {
             outputStream.writeShort(clock.sizeInBytes());
             outputStream.write(clock.toBytes());
         }
+        outputStream.writeBoolean(false);
+    }
+
+    public void writeDeleteAllRequest(DataOutputStream outputStream,
+                                      String storeName,
+                                      String elExpression,
+                                      RequestRoutingType routingType) throws IOException {
+        outputStream.writeByte(VoldemortOpCode.DELETE_ALL_OP_CODE);
+        outputStream.writeUTF(storeName);
+        outputStream.writeBoolean(routingType.equals(RequestRoutingType.ROUTED));
+        if(protocolVersion >= 2) {
+            outputStream.writeByte(routingType.getRoutingTypeCode());
+        }
+        outputStream.writeInt(0);
+        // this likely breaks protocol compatibility
+        outputStream.writeBoolean(true);
+        outputStream.writeUTF(elExpression);
     }
 
     public boolean readDeleteAllResponse(DataInputStream inputStream) throws IOException {

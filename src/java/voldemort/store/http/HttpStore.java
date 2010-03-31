@@ -34,11 +34,7 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import voldemort.VoldemortException;
 import voldemort.client.protocol.RequestFormat;
 import voldemort.server.RequestRoutingType;
-import voldemort.store.NoSuchCapabilityException;
-import voldemort.store.Store;
-import voldemort.store.StoreCapabilityType;
-import voldemort.store.StoreUtils;
-import voldemort.store.UnreachableStoreException;
+import voldemort.store.*;
 import voldemort.utils.ByteArray;
 import voldemort.versioning.VectorClock;
 import voldemort.versioning.Version;
@@ -115,6 +111,10 @@ public class HttpStore implements Store<ByteArray, byte[]> {
             if(method != null)
                 method.releaseConnection();
         }
+    }
+
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        throw new ExpressionEvaluationUnsupportedException("This store currently does not support el expression evaluation");
     }
 
     public List<Versioned<byte[]>> get(ByteArray key) throws VoldemortException {

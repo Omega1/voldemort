@@ -321,6 +321,7 @@ public class VoldemortNativeRequestHandler extends AbstractRequestHandler implem
                                   DataOutputStream outputStream,
                                   Store<ByteArray, byte[]> store) throws IOException {
 
+
         int numKeys = inputStream.readInt();
         Map<ByteArray, Version> keys = Maps.newHashMap();
         for (int i = 0; i < numKeys; i++) {
@@ -332,8 +333,14 @@ public class VoldemortNativeRequestHandler extends AbstractRequestHandler implem
             keys.put(key, version);
         }
 
+        boolean hasEl = inputStream.readBoolean();
+        String elExpression = null;
+        if (hasEl) {
+            elExpression = inputStream.readUTF();
+        }
+
         try {
-            boolean succeeded = store.deleteAll(keys);
+            boolean succeeded = hasEl ? store.deleteAll(elExpression) : store.deleteAll(keys);
             outputStream.writeShort(0);
             outputStream.writeBoolean(succeeded);
         } catch(VoldemortException e) {

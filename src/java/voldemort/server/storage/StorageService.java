@@ -19,6 +19,8 @@ package voldemort.server.storage;
 import static voldemort.cluster.failuredetector.FailureDetectorUtils.create;
 
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -47,8 +49,7 @@ import voldemort.cluster.Node;
 import voldemort.cluster.failuredetector.FailureDetector;
 import voldemort.cluster.failuredetector.FailureDetectorConfig;
 import voldemort.cluster.failuredetector.ServerStoreVerifier;
-import voldemort.serialization.ByteArraySerializer;
-import voldemort.serialization.SlopSerializer;
+import voldemort.serialization.*;
 import voldemort.server.AbstractService;
 import voldemort.server.ServiceType;
 import voldemort.server.StoreRepository;
@@ -182,7 +183,8 @@ public class StorageService extends AbstractService {
         /* Register slop store */
         if(voldemortConfig.isSlopEnabled()) {
             StorageEngine<ByteArray, byte[]> slopEngine = getStorageEngine("slop",
-                                                                           voldemortConfig.getSlopStoreType());
+                                                                           voldemortConfig.getSlopStoreType(),
+                                                                           null);
             registerEngine(slopEngine);
             storeRepository.setSlopStore(SerializingStorageEngine.wrap(slopEngine,
                                                                        new ByteArraySerializer(),
@@ -214,7 +216,8 @@ public class StorageService extends AbstractService {
     public void openStore(StoreDefinition storeDef) {
         logger.info("Opening store '" + storeDef.getName() + "' (" + storeDef.getType() + ").");
         StorageEngine<ByteArray, byte[]> engine = getStorageEngine(storeDef.getName(),
-                                                                   storeDef.getType());
+                                                                   storeDef.getType(),
+                                                                   storeDef.getKeySerializer());
         registerEngine(engine);
 
         if(voldemortConfig.isServerRoutingEnabled())
@@ -376,13 +379,30 @@ public class StorageService extends AbstractService {
 
     }
 
-    private StorageEngine<ByteArray, byte[]> getStorageEngine(String name, String type) {
+    private StorageEngine<ByteArray, byte[]> getStorageEngine(String name, String type, SerializerDefinition keySerializer) {
         StorageConfiguration config = storageConfigs.get(type);
         if(config == null)
             throw new ConfigurationException("Attempt to open store " + name + " but " + type
                                              + " storage engine of type " + type
                                              + " has not been enabled.");
-        return config.getStore(name);
+        StorageEngine<ByteArray, byte[]> store = config.getStore(name);
+        if (keySerializer != null) {
+            try {
+                Method m = store.getClass().getDeclaredMethod("setKeySerializer", Serializer.class);
+                m.invoke(store, new DefaultSerializerFactory().getSerializer(keySerializer));
+            }
+            catch (NoSuchMethodException e) {
+                // ignore
+            }
+            catch (InvocationTargetException e) {
+                logger.error(e.getMessage(), e);
+            }
+            catch (IllegalAccessException e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
+
+        return store;
     }
 
     @Override

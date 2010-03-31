@@ -65,6 +65,10 @@ public class MutableStoreVerifier extends BasicStoreVerifier<ByteArray, byte[]> 
                     return false;
                 }
 
+                public boolean deleteAll(String elExpression) throws VoldemortException {
+                    return false;
+                }
+
                 public List<Versioned<byte[]>> get(ByteArray key) throws VoldemortException {
                     return null;
                 }

@@ -28,18 +28,8 @@ import voldemort.annotations.jmx.JmxOperation;
 import voldemort.serialization.IdentitySerializer;
 import voldemort.serialization.Serializer;
 import voldemort.serialization.VersionedSerializer;
-import voldemort.store.NoSuchCapabilityException;
-import voldemort.store.PersistenceFailureException;
-import voldemort.store.StorageEngine;
-import voldemort.store.StorageInitializationException;
-import voldemort.store.Store;
-import voldemort.store.StoreCapabilityType;
-import voldemort.store.StoreUtils;
-import voldemort.utils.ByteArray;
-import voldemort.utils.ByteUtils;
-import voldemort.utils.ClosableIterator;
-import voldemort.utils.Pair;
-import voldemort.utils.Utils;
+import voldemort.store.*;
+import voldemort.utils.*;
 import voldemort.versioning.ObsoleteVersionException;
 import voldemort.versioning.Occured;
 import voldemort.versioning.VectorClock;
@@ -404,6 +394,10 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[]> {
                 attemptCommit(transaction);
             }
         }
+    }
+
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        throw new ExpressionEvaluationUnsupportedException("This store currently does not support el expression evaluation");
     }
 
     public Object getCapability(StoreCapabilityType capability) {

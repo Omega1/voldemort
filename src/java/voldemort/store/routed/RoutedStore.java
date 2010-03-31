@@ -362,6 +362,81 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
         return deletedSomething.get();
     }
 
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        final AtomicBoolean deletedSomething = new AtomicBoolean(false);
+
+        List<Node> availableNodes = availableNodes(routingStrategy.getNodes());
+
+        // quickly fail if there aren't enough nodes to meet the requirement
+        checkRequiredWrites(availableNodes);
+
+
+        List<Callable<DeleteAllResult>> callables = Lists.newArrayList();
+        for (Node availableNode : availableNodes) {
+            callables.add(new DeleteAllCallable(availableNode, elExpression));
+        }
+
+        // A list of thrown exceptions, indicating the number of failures
+        List<Throwable> failures = Lists.newArrayList();
+
+        Map<Node, MutableInt> nodesToSuccessCount = Maps.newHashMap();
+        for(Node node: availableNodes)
+            nodesToSuccessCount.put(node, new MutableInt(0));
+
+        List<Future<DeleteAllResult>> futures;
+        try {
+            // TODO What to do about timeouts? They should be longer as deleteAll
+            // is likely to
+            // take longer. At the moment, it's just timeoutMs * 3, but should
+            // this be based on the number of the keys?
+            futures = executor.invokeAll(callables, timeoutMs * 3, TimeUnit.MILLISECONDS);
+        } catch(InterruptedException e) {
+            throw new InsufficientOperationalNodesException("deleteAll operation interrupted.", e);
+        }
+
+        for(Future<DeleteAllResult> f: futures) {
+            if(f.isCancelled()) {
+                logger.warn("deleteAll operation timed out after " + timeoutMs + " ms.");
+                continue;
+            }
+            try {
+                DeleteAllResult result = f.get();
+                if(result.exception != null) {
+                    if(result.exception instanceof VoldemortApplicationException) {
+                        throw (VoldemortException) result.exception;
+                    }
+                    failures.add(result.exception);
+                    continue;
+                }
+                deletedSomething.compareAndSet(false, result.deletedSomething);
+                MutableInt successCount = nodesToSuccessCount.get(result.callable.node);
+                successCount.increment();
+            } catch(InterruptedException e) {
+                throw new InsufficientOperationalNodesException("deleteAll operation interrupted.", e);
+            } catch(ExecutionException e) {
+                // We catch all Throwables apart from Error in the callable, so
+                // the else part
+                // should never happen
+                if(e.getCause() instanceof Error)
+                    throw (Error) e.getCause();
+                else
+                    logger.error(e.getMessage(), e);
+            }
+        }
+
+        for(Map.Entry<Node, MutableInt> mapEntry: nodesToSuccessCount.entrySet()) {
+            int successCount = mapEntry.getValue().intValue();
+            if(successCount < storeDef.getRequiredWrites())
+                throw new InsufficientOperationalNodesException(this.storeDef.getRequiredWrites()
+                                                                        + " deletes required, but "
+                                                                        + successCount
+                                                                        + " succeeded.",
+                                                                failures);
+        }
+
+        return deletedSomething.get();
+    }
+
     public Map<ByteArray, List<Versioned<byte[]>>> getAll(Iterable<ByteArray> keys)
             throws VoldemortException {
         StoreUtils.assertValidKeys(keys);
@@ -923,7 +998,7 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
                                                                                         time.getMilliseconds()));
     }
 
-    private List<Node> availableNodes(List<Node> list) {
+    private List<Node> availableNodes(Collection<Node> list) {
         List<Node> available = new ArrayList<Node>(list.size());
         for(Node node: list)
             if(failureDetector.isAvailable(node))
@@ -1097,10 +1172,18 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
 
         private final Node node;
         private final Map<ByteArray, Version> nodeKeys;
+        private final String elExpression;
 
         private DeleteAllCallable(Node node, Map<ByteArray, Version> nodeKeys) {
             this.node = node;
             this.nodeKeys = nodeKeys;
+            this.elExpression = null;
+        }
+
+        private DeleteAllCallable(Node node, String elExpression) {
+            this.node = node;
+            this.nodeKeys = null;
+            this.elExpression = elExpression;
         }
 
         public DeleteAllResult call() {
@@ -1109,8 +1192,14 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
             long startNs = System.nanoTime();
 
             try {
-                deletedSomething = innerStores.get(node.getId()).deleteAll(nodeKeys);
-                recordSuccess(node, startNs);
+                if (nodeKeys != null) {
+                    deletedSomething = innerStores.get(node.getId()).deleteAll(nodeKeys);
+                    recordSuccess(node, startNs);
+                }
+                else {
+                    deletedSomething = innerStores.get(node.getId()).deleteAll(elExpression);
+                    recordSuccess(node, startNs);
+                }
             } catch(UnreachableStoreException e) {
                 exception = e;
                 recordException(node, startNs, e);

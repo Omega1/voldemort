@@ -336,6 +336,10 @@ public class MetadataStore implements StorageEngine<ByteArray, byte[]> {
         throw new VoldemortException("You cannot delete your metadata !!");
     }
 
+    public boolean deleteAll(String elExpression) throws VoldemortException {
+        throw new VoldemortException("You cannot delete your metadata !!");
+    }
+
     public Map<ByteArray, List<Versioned<byte[]>>> getAll(Iterable<ByteArray> keys)
             throws VoldemortException {
         StoreUtils.assertValidKeys(keys);
