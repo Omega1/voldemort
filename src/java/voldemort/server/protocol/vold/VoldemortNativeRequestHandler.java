@@ -197,6 +197,9 @@ public class VoldemortNativeRequestHandler extends AbstractRequestHandler implem
                         buffer.position(buffer.position() + clockSize);
                     }
 
+                    if (inputStream.readBoolean()) {
+                        inputStream.readUTF();
+                    }
                     break;
                 }
                 default:
@@ -320,7 +323,6 @@ public class VoldemortNativeRequestHandler extends AbstractRequestHandler implem
     private void handleDeleteAll(DataInputStream inputStream,
                                   DataOutputStream outputStream,
                                   Store<ByteArray, byte[]> store) throws IOException {
-
 
         int numKeys = inputStream.readInt();
         Map<ByteArray, Version> keys = Maps.newHashMap();

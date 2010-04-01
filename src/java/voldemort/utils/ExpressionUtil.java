@@ -41,7 +41,7 @@ public class ExpressionUtil {
             vars.put("key", serializedKey);
 
             // Now we execute it.
-            return (Boolean) MVEL.executeExpression(compiled, vars);
+            return MVEL.executeExpression(compiled, vars, Boolean.class);
         }
         catch (Exception e) {
             logger.error("Error encountered when evaluating el expression: " +  e.getMessage());
