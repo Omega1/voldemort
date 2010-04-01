@@ -16,6 +16,8 @@
 
 package voldemort.cluster.failuredetector;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Holds the status of a node--either available or unavailable as well as the
@@ -27,62 +29,62 @@ package voldemort.cluster.failuredetector;
  */
 class NodeStatus {
 
-    private long lastChecked;
+    private final AtomicLong lastChecked = new AtomicLong();
 
-    private boolean isAvailable;
+    private final AtomicBoolean isAvailable = new AtomicBoolean();
 
-    private long startMillis;
+    private final AtomicLong startMillis = new AtomicLong();
 
-    private long success;
+    private final AtomicLong success = new AtomicLong();
 
-    private long total;
+    private final AtomicLong total = new AtomicLong();
 
     public long getLastChecked() {
-        return lastChecked;
+        return lastChecked.get();
     }
 
     public void setLastChecked(long lastChecked) {
-        this.lastChecked = lastChecked;
+        this.lastChecked.set(lastChecked);
     }
 
     public boolean isAvailable() {
-        return isAvailable;
+        return isAvailable.get();
     }
 
     public void setAvailable(boolean isAvailable) {
-        this.isAvailable = isAvailable;
+        this.isAvailable.set(isAvailable);
     }
 
     public long getStartMillis() {
-        return startMillis;
+        return startMillis.get();
     }
 
     public void setStartMillis(long startMillis) {
-        this.startMillis = startMillis;
+        this.startMillis.set(startMillis);
     }
 
     public long getSuccess() {
-        return success;
+        return success.get();
     }
 
     public void setSuccess(long success) {
-        this.success = success;
+        this.success.set(success);
     }
 
     public void incrementSuccess(long delta) {
-        this.success += delta;
+        this.success.addAndGet(delta);
     }
 
     public long getTotal() {
-        return total;
+        return total.get();
     }
 
     public void setTotal(long total) {
-        this.total = total;
+        this.total.set(total);
     }
 
     public void incrementTotal(long delta) {
-        this.total += delta;
+        this.total.addAndGet(delta);
     }
 
 }
