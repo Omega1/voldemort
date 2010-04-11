@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import voldemort.VoldemortException;
+import voldemort.client.DeleteAllType;
 import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
 
@@ -53,10 +54,10 @@ public class SleepyStore<K, V> extends DelegatingStore<K, V> {
     }
 
     @Override
-    public boolean deleteAll(String elExpression) throws VoldemortException {
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
         try {
             Thread.sleep(sleepTimeMs);
-            return getInnerStore().deleteAll(elExpression);
+            return getInnerStore().deleteAll(type, expression);
         } catch(InterruptedException e) {
             throw new VoldemortException(e);
         }

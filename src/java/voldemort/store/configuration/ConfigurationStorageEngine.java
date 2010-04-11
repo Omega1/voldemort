@@ -27,7 +27,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
-import voldemort.store.ExpressionEvaluationUnsupportedException;
+import voldemort.client.DeleteAllType;
 import voldemort.store.StorageEngine;
 import voldemort.store.StoreCapabilityType;
 import voldemort.store.StoreUtils;
@@ -94,8 +94,8 @@ public class ConfigurationStorageEngine implements StorageEngine<String, String>
         return deletedSomething;
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
-        throw new ExpressionEvaluationUnsupportedException("This store currently does not support el expression evaluation");
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
+        throw new UnsupportedOperationException("This store currently does not support expression evaluation");
     }
 
     public synchronized List<Versioned<String>> get(String key) throws VoldemortException {

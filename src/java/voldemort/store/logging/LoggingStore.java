@@ -22,6 +22,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
+import voldemort.client.DeleteAllType;
 import voldemort.store.DelegatingStore;
 import voldemort.store.Store;
 import voldemort.store.StoreCapabilityType;
@@ -119,7 +120,7 @@ public class LoggingStore<K, V> extends DelegatingStore<K, V> {
     }
 
     @Override
-    public boolean deleteAll(String elExpression) throws VoldemortException {
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
         long startTimeNs = 0;
         boolean deletedSomething = false;
         boolean succeeded = false;
@@ -127,7 +128,7 @@ public class LoggingStore<K, V> extends DelegatingStore<K, V> {
             startTimeNs = time.getNanoseconds();
 
         try {
-            deletedSomething = getInnerStore().deleteAll(elExpression);
+            deletedSomething = getInnerStore().deleteAll(type, expression);
             succeeded = true;
         } finally {
             printTimedMessage("DELETEALL", succeeded, startTimeNs);

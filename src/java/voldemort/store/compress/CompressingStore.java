@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import voldemort.VoldemortException;
-import voldemort.store.ExpressionEvaluationUnsupportedException;
+import voldemort.client.DeleteAllType;
 import voldemort.store.Store;
 import voldemort.store.StoreCapabilityType;
 import voldemort.store.StoreUtils;
@@ -165,7 +165,7 @@ public class CompressingStore implements Store<ByteArray, byte[]> {
         return deletedSomething;
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
-        throw new ExpressionEvaluationUnsupportedException("This store currently does not support el expression evaluation");
+    public boolean deleteAll(DeleteAllType type, String xpression) throws VoldemortException {
+        throw new UnsupportedOperationException("This store currently does not support expression evaluation");
     }
 }

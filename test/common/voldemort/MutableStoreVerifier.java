@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import voldemort.client.DeleteAllType;
 import voldemort.cluster.Node;
 import voldemort.cluster.failuredetector.BasicStoreVerifier;
 import voldemort.store.Store;
@@ -65,7 +66,7 @@ public class MutableStoreVerifier extends BasicStoreVerifier<ByteArray, byte[]> 
                     return false;
                 }
 
-                public boolean deleteAll(String elExpression) throws VoldemortException {
+                public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
                     return false;
                 }
 

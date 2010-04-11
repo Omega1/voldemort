@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
 import voldemort.annotations.jmx.JmxOperation;
+import voldemort.client.DeleteAllType;
 import voldemort.store.StorageEngine;
 import voldemort.store.StoreCapabilityType;
 import voldemort.store.memory.InMemoryStorageEngine;
@@ -51,9 +52,9 @@ public class PausableStorageEngine<K, V> implements StorageEngine<K, V> {
         return inner.deleteAll(keys);
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
         blockIfNecessary();
-        return inner.deleteAll(elExpression);
+        return inner.deleteAll(type, expression);
     }
 
     private void blockIfNecessary() {

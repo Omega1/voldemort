@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
 import voldemort.annotations.jmx.JmxOperation;
+import voldemort.client.DeleteAllType;
 import voldemort.serialization.IdentitySerializer;
 import voldemort.serialization.Serializer;
 import voldemort.serialization.VersionedSerializer;
@@ -396,8 +397,8 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[]> {
         }
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
-        throw new ExpressionEvaluationUnsupportedException("This store currently does not support el expression evaluation");
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
+        throw new UnsupportedOperationException("This store currently does not support expression evaluation");
     }
 
     public Object getCapability(StoreCapabilityType capability) {

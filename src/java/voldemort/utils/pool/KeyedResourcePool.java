@@ -3,12 +3,7 @@ package voldemort.utils.pool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -310,7 +305,7 @@ public class KeyedResourcePool<K, V> {
         final AtomicInteger size = new AtomicInteger(0);
 
         public Pool(int defaultPoolSize, boolean isFair) {
-            queue = new LinkedBlockingQueue<V>(defaultPoolSize);
+            queue = new ArrayBlockingQueue<V>(defaultPoolSize, isFair);
         }
 
         public V nonBlockingGet() {

@@ -23,6 +23,7 @@ import javax.management.MBeanOperationInfo;
 
 import voldemort.VoldemortException;
 import voldemort.annotations.jmx.JmxOperation;
+import voldemort.client.DeleteAllType;
 import voldemort.store.DelegatingStore;
 import voldemort.store.Store;
 import voldemort.store.StoreCapabilityType;
@@ -71,10 +72,10 @@ public class StatTrackingStore<K, V> extends DelegatingStore<K, V> {
     }
 
     @Override
-    public boolean deleteAll(String elExpression) throws VoldemortException {
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
         long start = System.nanoTime();
         try {
-            return super.deleteAll(elExpression);
+            return super.deleteAll(type, expression);
         } catch(VoldemortException e) {
             stats.recordTime(Tracked.EXCEPTION, System.nanoTime() - start);
             throw e;

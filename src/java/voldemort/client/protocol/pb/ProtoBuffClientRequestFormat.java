@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import voldemort.client.DeleteAllType;
 import voldemort.client.protocol.RequestFormat;
 import voldemort.client.protocol.pb.VProto.DeleteResponse;
 import voldemort.client.protocol.pb.VProto.GetAllResponse;
@@ -106,10 +107,12 @@ public class ProtoBuffClientRequestFormat implements RequestFormat {
 
     public void writeDeleteAllRequest(DataOutputStream output,
                                       String storeName,
-                                      String elExpression,
+                                      DeleteAllType type,
+                                      String expression,
                                       RequestRoutingType routingType) throws IOException {
         VProto.DeleteAllRequest.Builder req = VProto.DeleteAllRequest.newBuilder();
-        req.setExpression(elExpression);
+        req.setType(type.ordinal());
+        req.setExpression(expression);
 
         ProtoUtils.writeMessage(output,
                                 VProto.VoldemortRequest.newBuilder()

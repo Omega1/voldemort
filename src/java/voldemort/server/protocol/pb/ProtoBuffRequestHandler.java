@@ -10,6 +10,7 @@ import java.util.Map;
 
 import com.google.common.collect.Maps;
 import voldemort.VoldemortException;
+import voldemort.client.DeleteAllType;
 import voldemort.client.protocol.pb.ProtoUtils;
 import voldemort.client.protocol.pb.VProto;
 import voldemort.client.protocol.pb.VProto.GetRequest;
@@ -168,8 +169,9 @@ public class ProtoBuffRequestHandler extends AbstractRequestHandler {
         try {
             Map<ByteArray, Version> keys = Maps.newHashMap();
             if (request.hasExpression()) {
-                String el = request.getExpression();
-                response.setSuccess(store.deleteAll(el));
+                DeleteAllType type = DeleteAllType.values()[request.getType()];
+                String expression = request.getExpression();
+                response.setSuccess(store.deleteAll(type, expression));
             }
             else {
                 for (VProto.KeyedVersion keyedVersion : request.getDeleteList()) {

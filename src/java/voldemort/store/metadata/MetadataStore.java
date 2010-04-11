@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
 import voldemort.annotations.jmx.JmxOperation;
+import voldemort.client.DeleteAllType;
 import voldemort.client.rebalance.RebalancePartitionsInfo;
 import voldemort.cluster.Cluster;
 import voldemort.routing.RouteToAllStrategy;
@@ -336,7 +337,7 @@ public class MetadataStore implements StorageEngine<ByteArray, byte[]> {
         throw new VoldemortException("You cannot delete your metadata !!");
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
         throw new VoldemortException("You cannot delete your metadata !!");
     }
 

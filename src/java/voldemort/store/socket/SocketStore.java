@@ -26,6 +26,7 @@ import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
+import voldemort.client.DeleteAllType;
 import voldemort.client.protocol.RequestFormat;
 import voldemort.client.protocol.RequestFormatFactory;
 import voldemort.server.RequestRoutingType;
@@ -124,12 +125,13 @@ public class SocketStore implements Store<ByteArray, byte[]> {
         }
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
         SocketAndStreams sands = pool.checkout(destination);
         try {
             requestFormat.writeDeleteAllRequest(sands.getOutputStream(),
                                              name,
-                                             elExpression,
+                                             type,
+                                             expression,
                                              requestType);
             sands.getOutputStream().flush();
             return requestFormat.readDeleteAllResponse(sands.getInputStream());

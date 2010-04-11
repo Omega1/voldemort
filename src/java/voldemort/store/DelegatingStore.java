@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import voldemort.VoldemortException;
+import voldemort.client.DeleteAllType;
 import voldemort.utils.Utils;
 import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
@@ -54,8 +55,8 @@ public class DelegatingStore<K, V> implements Store<K, V> {
         return innerStore.deleteAll(keys);
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
-        return innerStore.deleteAll(elExpression);
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
+        return innerStore.deleteAll(type, expression);
     }
 
     public Map<K, List<Versioned<V>>> getAll(Iterable<K> keys) throws VoldemortException {

@@ -162,19 +162,18 @@ public interface StoreClient<K, V> {
     public boolean deleteAll(Iterable<K> keys);
 
     /**
-     * For each key for which the provided elExpression returns true delete any version which is equal to or less
-     * then the current version of the key.
+     * Delete all the keys which match the provided type/expression parameters.
      *
-     * <p>Since el evaluation in almost all cases must occur with deserialized keys the key serializer being used for
+     * <p>Since key evaluation in almost all cases must occur with deserialized keys the key serializer being used for
      * the store must be able to deserialize keys on the Voldemort server. Because of this if the serializer being
-     * used to serialize keys is not compatible with el expressions (for example, the identity serializer) this
-     * method will throw an ExpressionEvaluationUnsupportedException.</p>
+     * used to serialize keys is not compatible with expressions (for example, the identity serializer) this
+     * method will throw an UnsupportedOperationException.</p>
      *
-     * @param elExpression an el expression which must evaluate to either true or false using the current el expression parser 
+     * @param type the type of expression
+     * @param expression an expression to be used to determine if a key should be deleted or not.
      * @return true if anything is deleted
-     * @throws ExpressionEvaluationUnsupportedException if el expression evaluation is not possible for this store
      */
-    public boolean deleteAll(String elExpression);
+    public boolean deleteAll(DeleteAllType type, String expression);
 
     /**
      * Delete the specified version and any prior versions of the given key

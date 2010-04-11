@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import voldemort.VoldemortException;
+import voldemort.client.DeleteAllType;
 import voldemort.utils.Utils;
 import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
@@ -63,7 +64,7 @@ public class FailingStore<K, V> implements Store<K, V> {
         throw exception;
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
         throw exception;
     }
 

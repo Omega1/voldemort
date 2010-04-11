@@ -477,8 +477,15 @@ _DELETEALLREQUEST = descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     descriptor.FieldDescriptor(
-      name='expression', full_name='voldemort.DeleteAllRequest.expression', index=1,
-      number=2, type=9, cpp_type=9, label=1,
+      name='type', full_name='voldemort.DeleteAllRequest.type', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    descriptor.FieldDescriptor(
+      name='expression', full_name='voldemort.DeleteAllRequest.expression', index=2,
+      number=3, type=9, cpp_type=9, label=1,
       default_value=unicode("", "utf-8"),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,

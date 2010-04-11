@@ -21,6 +21,7 @@ import java.util.Map;
 
 import voldemort.VoldemortException;
 import voldemort.annotations.concurrency.Threadsafe;
+import voldemort.client.DeleteAllType;
 import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
 
@@ -84,13 +85,13 @@ public interface Store<K, V> {
     public boolean deleteAll(Map<K, Version> keys) throws VoldemortException;
 
     /**
-     * Delete all entries for which the provided elExpression returns true
+     * Delete all entries which match the provided type/expression.
      *
-     * @param elExpression an el expression which must evaluate to either true or false using the current el expression parser
+     * @param type the type of expression
+     * @param expression an expression to be used to determine if a key should be deleted or not.
      * @return true if anything was deleted
-     * @throws ExpressionEvaluationUnsupportedException if el expression evaluation is not possible for this store
      */
-    public boolean deleteAll(String elExpression) throws VoldemortException;
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException;
 
     /**
      * @return The name of the store.

@@ -32,6 +32,7 @@ import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 
 import voldemort.VoldemortException;
+import voldemort.client.DeleteAllType;
 import voldemort.client.protocol.RequestFormat;
 import voldemort.server.RequestRoutingType;
 import voldemort.store.*;
@@ -113,8 +114,8 @@ public class HttpStore implements Store<ByteArray, byte[]> {
         }
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
-        throw new ExpressionEvaluationUnsupportedException("This store currently does not support el expression evaluation");
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
+        throw new UnsupportedOperationException("This store currently does not support expression evaluation");
     }
 
     public List<Versioned<byte[]>> get(ByteArray key) throws VoldemortException {

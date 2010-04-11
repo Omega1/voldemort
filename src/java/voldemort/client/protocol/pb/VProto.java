@@ -5148,8 +5148,15 @@ public final class VProto {
       return delete_.get(index);
     }
     
-    // optional string expression = 2;
-    public static final int EXPRESSION_FIELD_NUMBER = 2;
+    // optional int32 type = 2;
+    public static final int TYPE_FIELD_NUMBER = 2;
+    private boolean hasType;
+    private int type_ = 0;
+    public boolean hasType() { return hasType; }
+    public int getType() { return type_; }
+    
+    // optional string expression = 3;
+    public static final int EXPRESSION_FIELD_NUMBER = 3;
     private boolean hasExpression;
     private java.lang.String expression_ = "";
     public boolean hasExpression() { return hasExpression; }
@@ -5167,8 +5174,11 @@ public final class VProto {
       for (voldemort.client.protocol.pb.VProto.KeyedVersion element : getDeleteList()) {
         output.writeMessage(1, element);
       }
+      if (hasType()) {
+        output.writeInt32(2, getType());
+      }
       if (hasExpression()) {
-        output.writeString(2, getExpression());
+        output.writeString(3, getExpression());
       }
       getUnknownFields().writeTo(output);
     }
@@ -5183,9 +5193,13 @@ public final class VProto {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(1, element);
       }
+      if (hasType()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(2, getType());
+      }
       if (hasExpression()) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getExpression());
+          .computeStringSize(3, getExpression());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -5346,6 +5360,9 @@ public final class VProto {
           }
           result.delete_.addAll(other.delete_);
         }
+        if (other.hasType()) {
+          setType(other.getType());
+        }
         if (other.hasExpression()) {
           setExpression(other.getExpression());
         }
@@ -5380,7 +5397,11 @@ public final class VProto {
               addDelete(subBuilder.buildPartial());
               break;
             }
-            case 18: {
+            case 16: {
+              setType(input.readInt32());
+              break;
+            }
+            case 26: {
               setExpression(input.readString());
               break;
             }
@@ -5440,7 +5461,25 @@ public final class VProto {
         return this;
       }
       
-      // optional string expression = 2;
+      // optional int32 type = 2;
+      public boolean hasType() {
+        return result.hasType();
+      }
+      public int getType() {
+        return result.getType();
+      }
+      public Builder setType(int value) {
+        result.hasType = true;
+        result.type_ = value;
+        return this;
+      }
+      public Builder clearType() {
+        result.hasType = false;
+        result.type_ = 0;
+        return this;
+      }
+      
+      // optional string expression = 3;
       public boolean hasExpression() {
         return result.hasExpression();
       }
@@ -6652,22 +6691,23 @@ public final class VProto {
       "eRequest\022\013\n\003key\030\001 \002(\014\022\'\n\007version\030\002 \002(\0132\026" +
       ".voldemort.VectorClock\"B\n\016DeleteResponse" +
       "\022\017\n\007success\030\001 \002(\010\022\037\n\005error\030\002 \001(\0132\020.volde" +
-      "mort.Error\"O\n\020DeleteAllRequest\022\'\n\006delete" +
-      "\030\001 \003(\0132\027.voldemort.KeyedVersion\022\022\n\nexpre" +
-      "ssion\030\002 \001(\t\"E\n\021DeleteAllResponse\022\017\n\007succ" +
-      "ess\030\001 \002(\010\022\037\n\005error\030\002 \001(\0132\020.voldemort.Err" +
-      "or\"\312\002\n\020VoldemortRequest\022$\n\004type\030\001 \002(\0162\026.",
-      "voldemort.RequestType\022\033\n\014should_route\030\002 " +
-      "\002(\010:\005false\022\r\n\005store\030\003 \002(\t\022\"\n\003get\030\004 \001(\0132\025" +
-      ".voldemort.GetRequest\022(\n\006getAll\030\005 \001(\0132\030." +
-      "voldemort.GetAllRequest\022\"\n\003put\030\006 \001(\0132\025.v" +
-      "oldemort.PutRequest\022(\n\006delete\030\007 \001(\0132\030.vo" +
-      "ldemort.DeleteRequest\022\030\n\020requestRouteTyp" +
-      "e\030\010 \001(\005\022.\n\tdeleteAll\030\t \001(\0132\033.voldemort.D" +
-      "eleteAllRequest*Y\n\013RequestType\022\007\n\003GET\020\000\022" +
-      "\013\n\007GET_ALL\020\001\022\007\n\003PUT\020\002\022\n\n\006DELETE\020\003\022\017\n\013GET" +
-      "_VERSION\020\004\022\016\n\nDELETE_ALL\020\005B(\n\034voldemort.",
-      "client.protocol.pbB\006VProtoH\001"
+      "mort.Error\"]\n\020DeleteAllRequest\022\'\n\006delete" +
+      "\030\001 \003(\0132\027.voldemort.KeyedVersion\022\014\n\004type\030" +
+      "\002 \001(\005\022\022\n\nexpression\030\003 \001(\t\"E\n\021DeleteAllRe" +
+      "sponse\022\017\n\007success\030\001 \002(\010\022\037\n\005error\030\002 \001(\0132\020" +
+      ".voldemort.Error\"\312\002\n\020VoldemortRequest\022$\n",
+      "\004type\030\001 \002(\0162\026.voldemort.RequestType\022\033\n\014s" +
+      "hould_route\030\002 \002(\010:\005false\022\r\n\005store\030\003 \002(\t\022" +
+      "\"\n\003get\030\004 \001(\0132\025.voldemort.GetRequest\022(\n\006g" +
+      "etAll\030\005 \001(\0132\030.voldemort.GetAllRequest\022\"\n" +
+      "\003put\030\006 \001(\0132\025.voldemort.PutRequest\022(\n\006del" +
+      "ete\030\007 \001(\0132\030.voldemort.DeleteRequest\022\030\n\020r" +
+      "equestRouteType\030\010 \001(\005\022.\n\tdeleteAll\030\t \001(\013" +
+      "2\033.voldemort.DeleteAllRequest*Y\n\013Request" +
+      "Type\022\007\n\003GET\020\000\022\013\n\007GET_ALL\020\001\022\007\n\003PUT\020\002\022\n\n\006D" +
+      "ELETE\020\003\022\017\n\013GET_VERSION\020\004\022\016\n\nDELETE_ALL\020\005",
+      "B(\n\034voldemort.client.protocol.pbB\006VProto" +
+      "H\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -6799,7 +6839,7 @@ public final class VProto {
           internal_static_voldemort_DeleteAllRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_voldemort_DeleteAllRequest_descriptor,
-              new java.lang.String[] { "Delete", "Expression", },
+              new java.lang.String[] { "Delete", "Type", "Expression", },
               voldemort.client.protocol.pb.VProto.DeleteAllRequest.class,
               voldemort.client.protocol.pb.VProto.DeleteAllRequest.Builder.class);
           internal_static_voldemort_DeleteAllResponse_descriptor =

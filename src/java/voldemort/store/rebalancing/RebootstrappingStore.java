@@ -22,6 +22,7 @@ import java.util.Map;
 
 import voldemort.VoldemortException;
 import voldemort.client.DefaultStoreClient;
+import voldemort.client.DeleteAllType;
 import voldemort.client.protocol.admin.AdminClient;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.Node;
@@ -141,10 +142,10 @@ public class RebootstrappingStore extends DelegatingStore<ByteArray, byte[]> {
     }
 
     @Override
-    public boolean deleteAll(String elExpression) throws VoldemortException {
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
         for(int attempts = 0; attempts < this.maxMetadataRefreshAttempts; attempts++) {
             try {
-                return super.deleteAll(elExpression);
+                return super.deleteAll(type, expression);
             } catch(InvalidMetadataException e) {
                 reinit();
             }

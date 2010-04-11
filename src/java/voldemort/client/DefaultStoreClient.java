@@ -109,13 +109,13 @@ public class DefaultStoreClient<K, V> implements StoreClient<K, V> {
                                      + " metadata refresh attempts failed.");
     }
 
-    public boolean deleteAll(String elExpression) {
+    public boolean deleteAll(DeleteAllType type, String expression) {
         for(int attempts = 0;; attempts++) {
             if(attempts >= this.metadataRefreshAttempts)
                 throw new VoldemortException(this.metadataRefreshAttempts
                                              + " metadata refresh attempts failed.");
             try {
-                return store.deleteAll(elExpression);
+                return store.deleteAll(type, expression);
             } catch(InvalidMetadataException e) {
                 bootStrap();
             }

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import voldemort.VoldemortException;
+import voldemort.client.DeleteAllType;
 import voldemort.serialization.Serializer;
 import voldemort.store.Store;
 import voldemort.store.StoreCapabilityType;
@@ -73,8 +74,8 @@ public class SerializingStore<K, V> implements Store<K, V> {
         return store.deleteAll(serializedMap);
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
-        return store.deleteAll(elExpression);
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
+        return store.deleteAll(type, expression);
     }
 
     private ByteArray keyToBytes(K key) {

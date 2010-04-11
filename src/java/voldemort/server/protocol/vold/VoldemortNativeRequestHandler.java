@@ -12,6 +12,7 @@ import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
+import voldemort.client.DeleteAllType;
 import voldemort.serialization.VoldemortOpCode;
 import voldemort.server.RequestRoutingType;
 import voldemort.server.StoreRepository;
@@ -198,6 +199,7 @@ public class VoldemortNativeRequestHandler extends AbstractRequestHandler implem
                     }
 
                     if (inputStream.readBoolean()) {
+                        inputStream.readInt();
                         inputStream.readUTF();
                     }
                     break;
@@ -324,29 +326,36 @@ public class VoldemortNativeRequestHandler extends AbstractRequestHandler implem
                                   DataOutputStream outputStream,
                                   Store<ByteArray, byte[]> store) throws IOException {
 
-        int numKeys = inputStream.readInt();
-        Map<ByteArray, Version> keys = Maps.newHashMap();
-        for (int i = 0; i < numKeys; i++) {
-            ByteArray key = readKey(inputStream);
-            int versionSize = inputStream.readShort();
-            byte[] versionBytes = new byte[versionSize];
-            ByteUtils.read(inputStream, versionBytes);
-            VectorClock version = new VectorClock(versionBytes);
-            keys.put(key, version);
-        }
-
-        boolean hasEl = inputStream.readBoolean();
-        String elExpression = null;
-        if (hasEl) {
-            elExpression = inputStream.readUTF();
-        }
-
         try {
-            boolean succeeded = hasEl ? store.deleteAll(elExpression) : store.deleteAll(keys);
+            int numKeys = inputStream.readInt();
+            Map<ByteArray, Version> keys = Maps.newHashMap();
+            for (int i = 0; i < numKeys; i++) {
+                ByteArray key = readKey(inputStream);
+                int versionSize = inputStream.readShort();
+                byte[] versionBytes = new byte[versionSize];
+                ByteUtils.read(inputStream, versionBytes);
+                VectorClock version = new VectorClock(versionBytes);
+                keys.put(key, version);
+            }
+
+            boolean hasEl = inputStream.readBoolean();
+            String expression = null;
+            DeleteAllType type = null;
+            if (hasEl) {
+                type = DeleteAllType.values()[inputStream.readInt()];
+                expression = inputStream.readUTF();
+            }
+
+            boolean succeeded = hasEl ? store.deleteAll(type, expression) : store.deleteAll(keys);
             outputStream.writeShort(0);
             outputStream.writeBoolean(succeeded);
-        } catch(VoldemortException e) {
+        }
+        catch(VoldemortException e) {
             writeException(outputStream, e);
+        }
+        catch(Throwable e) {
+            logger.fatal(e.getMessage(), e);
+            writeException(outputStream, new VoldemortException("Error: " + e.getMessage(), e));
         }
     }
 

@@ -38,6 +38,7 @@ import org.apache.log4j.Logger;
 
 import voldemort.VoldemortApplicationException;
 import voldemort.VoldemortException;
+import voldemort.client.DeleteAllType;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.Node;
 import voldemort.cluster.failuredetector.FailureDetector;
@@ -362,7 +363,7 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
         return deletedSomething.get();
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
         final AtomicBoolean deletedSomething = new AtomicBoolean(false);
 
         List<Node> availableNodes = availableNodes(routingStrategy.getNodes());
@@ -373,7 +374,7 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
 
         List<Callable<DeleteAllResult>> callables = Lists.newArrayList();
         for (Node availableNode : availableNodes) {
-            callables.add(new DeleteAllCallable(availableNode, elExpression));
+            callables.add(new DeleteAllCallable(availableNode, type, expression));
         }
 
         // A list of thrown exceptions, indicating the number of failures
@@ -1172,18 +1173,21 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
 
         private final Node node;
         private final Map<ByteArray, Version> nodeKeys;
-        private final String elExpression;
+        private final DeleteAllType type;
+        private final String expression;
 
         private DeleteAllCallable(Node node, Map<ByteArray, Version> nodeKeys) {
             this.node = node;
             this.nodeKeys = nodeKeys;
-            this.elExpression = null;
+            this.type = null;
+            this.expression = null;
         }
 
-        private DeleteAllCallable(Node node, String elExpression) {
+        private DeleteAllCallable(Node node, DeleteAllType type, String expression) {
             this.node = node;
             this.nodeKeys = null;
-            this.elExpression = elExpression;
+            this.type = type;
+            this.expression = expression;
         }
 
         public DeleteAllResult call() {
@@ -1197,7 +1201,7 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
                     recordSuccess(node, startNs);
                 }
                 else {
-                    deletedSomething = innerStores.get(node.getId()).deleteAll(elExpression);
+                    deletedSomething = innerStores.get(node.getId()).deleteAll(type, expression);
                     recordSuccess(node, startNs);
                 }
             } catch(UnreachableStoreException e) {

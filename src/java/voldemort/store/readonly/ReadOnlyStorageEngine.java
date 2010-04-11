@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 import voldemort.VoldemortException;
 import voldemort.annotations.jmx.JmxGetter;
 import voldemort.annotations.jmx.JmxOperation;
+import voldemort.client.DeleteAllType;
 import voldemort.store.*;
 import voldemort.utils.ByteArray;
 import voldemort.utils.ByteUtils;
@@ -378,8 +379,8 @@ public class ReadOnlyStorageEngine implements StorageEngine<ByteArray, byte[]> {
         throw new UnsupportedOperationException("DeleteAll is not supported on this store, it is read-only.");
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
-        throw new UnsupportedOperationException("This store currently does not support el expression evaluation, it is read-only.");
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
+        throw new UnsupportedOperationException("This store currently does not support expression evaluation, it is read-only.");
     }
 
     /**

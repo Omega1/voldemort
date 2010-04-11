@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import voldemort.client.DeleteAllType;
 import voldemort.server.RequestRoutingType;
 import voldemort.utils.ByteArray;
 import voldemort.versioning.VectorClock;
@@ -83,7 +84,8 @@ public interface RequestFormat {
 
     public void writeDeleteAllRequest(DataOutputStream output,
                                    String storeName,
-                                   String elExpression,
+                                   DeleteAllType type,
+                                   String expression,
                                    RequestRoutingType routingType) throws IOException;
 
     public boolean readDeleteAllResponse(DataInputStream input) throws IOException;

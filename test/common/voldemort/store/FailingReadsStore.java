@@ -1,6 +1,7 @@
 package voldemort.store;
 
 import voldemort.VoldemortException;
+import voldemort.client.DeleteAllType;
 import voldemort.store.memory.InMemoryStorageEngine;
 import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
@@ -28,8 +29,8 @@ public class FailingReadsStore<K, V> implements Store<K, V> {
         return engine.deleteAll(keys);
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
-        return engine.deleteAll(elExpression);
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
+        return engine.deleteAll(type, expression);
     }
 
     public List<Versioned<V>> get(K key) throws VoldemortException {

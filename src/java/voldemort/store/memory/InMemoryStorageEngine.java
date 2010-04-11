@@ -28,6 +28,7 @@ import voldemort.VoldemortException;
 import voldemort.annotations.concurrency.NotThreadsafe;
 import voldemort.annotations.jmx.JmxGetter;
 import voldemort.annotations.jmx.JmxManaged;
+import voldemort.client.DeleteAllType;
 import voldemort.serialization.Serializer;
 import voldemort.store.*;
 import voldemort.utils.*;
@@ -35,7 +36,6 @@ import voldemort.versioning.ObsoleteVersionException;
 import voldemort.versioning.Occured;
 import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
-import voldemort.xml.StoreDefinitionsMapper;
 
 /**
  * A simple non-persistent, in-memory store. Useful for unit testing.
@@ -156,19 +156,47 @@ public class InMemoryStorageEngine<K, V> implements StorageEngine<K, V> {
         return deletedSomething;
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
         ClosableIterator<K> iter = keys();
         Serializer s = getKeySerializer();
         if (keySerializer == null) {
-            throw new ExpressionEvaluationUnsupportedException("This store currently does not support el expression evaluation");
+            throw new UnsupportedOperationException("This store currently does not support expression evaluation");
         }
         
         boolean deletedSomething = false;
         while (iter.hasNext()) {
             K key = iter.next();
-            if (ExpressionUtil.evaluatesToTrue(elExpression, s.toObject(((ByteArray) key).get()).toString())) {
-                delete(key);
-                deletedSomething = true;
+            String k = s.toObject(((ByteArray) key).get()).toString();
+            switch (type) {
+                case STARTS_WITH:
+                    if (k.startsWith(expression, 0)) {
+                        delete(key);
+                        deletedSomething = true;
+                    }
+                    break;
+                case CONTAINS:
+                    if (k.indexOf(expression) >= 0) {
+                        delete(key);
+                        deletedSomething = true;
+                    }
+                    break;
+                case REGEX:
+                    if (k.matches(expression)) {
+                        delete(key);
+                        deletedSomething = true;
+                    }
+                    break;
+                case ENDS_WITH:
+                    if (k.endsWith(expression)) {
+                        delete(key);
+                        deletedSomething = true;
+                    }
+                    break;
+                case EL_EXPRESSION:
+                    if (ExpressionUtil.evaluatesToTrue(expression, k)) {
+                        delete(key);
+                        deletedSomething = true;
+                    }
             }
         }
 

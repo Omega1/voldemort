@@ -5,6 +5,7 @@ import java.util.Map;
 
 import voldemort.VoldemortException;
 import voldemort.annotations.Experimental;
+import voldemort.client.DeleteAllType;
 import voldemort.serialization.Serializer;
 import voldemort.store.StorageEngine;
 import voldemort.store.Store;
@@ -64,8 +65,8 @@ public class ViewStorageEngine implements StorageEngine<ByteArray, byte[]> {
         return target.deleteAll(keys);
     }
 
-    public boolean deleteAll(String elExpression) throws VoldemortException {
-        return target.deleteAll(elExpression);
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
+        return target.deleteAll(type, expression);
     }
 
     public List<Versioned<byte[]>> get(ByteArray key) throws VoldemortException {

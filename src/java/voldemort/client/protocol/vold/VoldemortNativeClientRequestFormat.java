@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import voldemort.client.DeleteAllType;
 import voldemort.client.protocol.RequestFormat;
 import voldemort.serialization.VoldemortOpCode;
 import voldemort.server.RequestRoutingType;
@@ -100,7 +101,8 @@ public class VoldemortNativeClientRequestFormat implements RequestFormat {
 
     public void writeDeleteAllRequest(DataOutputStream outputStream,
                                       String storeName,
-                                      String elExpression,
+                                      DeleteAllType type,
+                                      String expression,
                                       RequestRoutingType routingType) throws IOException {
         outputStream.writeByte(VoldemortOpCode.DELETE_ALL_OP_CODE);
         outputStream.writeUTF(storeName);
@@ -111,7 +113,8 @@ public class VoldemortNativeClientRequestFormat implements RequestFormat {
         outputStream.writeInt(0);
         // this likely breaks protocol compatibility
         outputStream.writeBoolean(true);
-        outputStream.writeUTF(elExpression);
+        outputStream.writeInt(type.ordinal());
+        outputStream.writeUTF(expression);
     }
 
     public boolean readDeleteAllResponse(DataInputStream inputStream) throws IOException {

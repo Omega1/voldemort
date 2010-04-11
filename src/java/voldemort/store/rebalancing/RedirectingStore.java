@@ -23,6 +23,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
+import voldemort.client.DeleteAllType;
 import voldemort.client.protocol.RequestFormatType;
 import voldemort.cluster.Node;
 import voldemort.cluster.failuredetector.FailureDetector;
@@ -164,8 +165,8 @@ public class RedirectingStore extends DelegatingStore<ByteArray, byte[]> {
     }
 
     @Override
-    public boolean deleteAll(String elExpression) throws VoldemortException {
-        return getInnerStore().deleteAll(elExpression);
+    public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
+        return getInnerStore().deleteAll(type, expression);
     }
 
     protected boolean checkKeyBelongsToStolenPartitions(ByteArray key) {
