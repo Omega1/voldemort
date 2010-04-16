@@ -16,10 +16,7 @@
 
 package voldemort.store.memory;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -157,23 +154,44 @@ public class InMemoryStorageEngine<K, V> implements StorageEngine<K, V> {
     }
 
     public boolean deleteAll(DeleteAllType type, String expression) throws VoldemortException {
-        ClosableIterator<K> iter = keys();
-        Serializer s = getKeySerializer();
         if (keySerializer == null) {
             throw new UnsupportedOperationException("This store currently does not support expression evaluation");
         }
-        
+
+        Iterator<K> iter = map.keySet().iterator();
+        Serializer s = getKeySerializer();
         boolean deletedSomething = false;
+
+        // special case starts with type
+        if (type == DeleteAllType.STARTS_WITH) {
+            byte[] exp = s.toBytes(expression);
+            while (iter.hasNext()) {
+                K key = iter.next();
+                byte[] b = ((ByteArray) key).get();
+                boolean same = true;
+
+                for (int i = 0; i < exp.length; i++) {
+                    if (i >= b.length || exp[i] != b[i]) {
+                        same = false;
+                        break;
+                    }
+
+                }
+
+                if (same) {
+                    delete(key);
+                    deletedSomething = true;
+                }
+            }
+
+            return deletedSomething;
+        }
+
         while (iter.hasNext()) {
             K key = iter.next();
             String k = s.toObject(((ByteArray) key).get()).toString();
+
             switch (type) {
-                case STARTS_WITH:
-                    if (k.startsWith(expression, 0)) {
-                        delete(key);
-                        deletedSomething = true;
-                    }
-                    break;
                 case CONTAINS:
                     if (k.indexOf(expression) >= 0) {
                         delete(key);
