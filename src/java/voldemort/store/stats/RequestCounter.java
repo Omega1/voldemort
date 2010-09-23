@@ -84,7 +84,14 @@ public class RequestCounter {
         public void addOperation(long timeNS) {
             createArraysIfNecessary();
 
-            int idx = index.incrementAndGet() % maxOpsToTrack;
+            int i = index.incrementAndGet();
+            while (i < 0 || i == Integer.MAX_VALUE) {
+                // handle overflow
+                index.compareAndSet(i, 0);
+                i = index.get();
+            }
+            
+            int idx = i % maxOpsToTrack;
             opSave[idx] = System.nanoTime();
             opTime[idx] = timeNS;
             total.incrementAndGet();
